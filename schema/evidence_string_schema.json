@@ -1,0 +1,319 @@
+{
+    "type": "object",
+    "name": "evidence_string",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "urn:jsonschema:org:cttv:input:model:EvidenceString",
+    "title": "CTTV JSON Schema",
+    "version": 1.1,
+    "properties": {
+        "validated_against_schema_version": {
+            "description": "The schema version number against which the JSON object was validated.",
+            "required": true,
+            "type": "number"
+        },
+        "unique_association_fields": {
+            "description": "A combination of keys whose values uniquely identify each JSON object. For some data sources, the values for some keys may be comma-separated concatenations",
+            "type": "object",
+            "required": true,
+            "additionalProperties": {
+                "type": "string"
+            }
+        },
+        "biological_subject": {
+            "type": "object",
+            "id": "urn:jsonschema:org:cttv:input:model:BiologicalSubject",
+            "description": "The biological subject is any biological entity that can be expressed with an identifiers.org URI e.g. http://identifiers.org/ensembl/ENSG9023124 or http://identifiers.org/pfam/PF00619",
+            "properties": {
+                "about": {
+                    "type": "array",
+                    "required": true,
+                    "description": "An array of identifier.org URIs. For example, if depicting a CTTV target, which is a heteropolymeric protein complex, use: [http://identifiers.org/uniprot/P251200, http://identifiers.org/uniprot/P35348, http://identifiers.org/uniprot/P35368]",
+                    "items": {
+                        "type": "string",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "pattern": "^http://identifiers.org/.+/.+"
+                    }
+                },
+                "properties": {
+                    "type": "object",
+                    "id": "urn:jsonschema:org:cttv:input:model:BiologicalSubjectProperties",
+                    "properties": {
+                        "target_type": {
+                            "type": "string",
+                            "pattern": "^http://identifiers.org/cttv[.]{1,1}target/.+$",
+                            "description": "This field is REQUIRED IF your biological_subject is a CTTV target. i.e. if the regex pattern match in biological_subject is ^http://identifiers.org/ensembl or ^http://identifiers.org/uniprot. It must represent a field in the CTTV core 'target' ontology. See https://github.com/CTTV/input_data_format/blob/master/json_schema/cttv_uris_namespaces.md"
+                        },
+                        "activity": {
+                            "type": "string",
+                            "pattern": "^http://identifiers.org/cttv[.]{1,1}activity/.+$",
+                            "description": "This field is REQUIRED IF your biological_subject is a CTTV target. i.e. if the regex pattern match in biological_subject is ^http://identifiers.org/ensembl or ^http://identifiers.org/uniprot. The value must represent a field in the CTTV core 'biological activity' ontology. See https://github.com/CTTV/input_data_format/blob/master/json_schema/cttv_uris_namespaces.md"
+                        },
+                        "experiment_specific": {
+                            "type": "object",
+                            "required": false,
+                            "description": "Use this to add any string-based key:value pairs that you want to use to describe your biological subject.",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "evidence": {
+            "type": "object",
+            "required": true,
+            "id": "urn:jsonschema:org:cttv:input:model:Evidence",
+            "properties": {
+                "evidence_codes": {
+                    "type": "array",
+                    "required": true,
+                    "description": "array of evidence codes in this format: http://identifiers.org/eco/ECO:nnnnnnn",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^http://identifiers.org/eco/ECO:[0-9]{7,7}$"
+                    }
+                },
+                "association_score": {
+                    "type": "object",
+                    "required": true,
+                    "id": "urn:jsonschema:org:cttv:input:model:AssociationScore",
+                    "probability": {
+                        "type": "object",
+                        "required": true,
+                        "id": "urn:jsonschema:org:cttv:input:model:ProbabilityScore",
+                        "value": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 1,
+                            "required": true
+                        },
+                        "method": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "required": true
+                        }
+                    },
+                    "pvalue": {
+                        "type": "object",
+                        "required": true,
+                        "id": "urn:jsonschema:org:cttv:input:model:PValueScore",
+                        "value": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 1,
+                            "required": true
+                        },
+                        "method": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "required": true
+                        }
+                    }
+                },
+                "urls": {
+                    "type": "object",
+                    "id": "urn:jsonschema:org:cttv:input:model:ProvenanceUrls",
+                    "required": false,
+                    "properties": {
+                        "linkouts": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "id": "urn:jsonschema:org:cttv:input:model:LinkOut",
+                                "properties": {
+                                    "nice_name": {
+                                        "type": "string",
+                                        "required": false,
+                                        "description": "A nice name for the URL e.g. 'ArrayExpress Experiment overview'"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "required": false,
+                                        "pattern": "^http.+",
+                                        "description": "A foreign URL, which the user can dig into for provenance about the association."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "properties": {
+                    "type": "object",
+                    "id": "urn:jsonschema:org:cttv:input:model:EvidenceProperties",
+                    "experiment_specific": {
+                        "type": "object",
+                        "required": false,
+                        "description": "Use this to add any string-based key:value pairs that you want to use to describe your biological object.",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "evidence_chain": {
+                        "id": "urn:jsonschema:org:cttv:input:model:EvidenceChain",
+                        "type": "array",
+                        "required": false,
+                        "items": {
+                            "type": "object",
+                            "$ref": "urn:jsonschema:org:cttv:input:model:EvidenceString"
+                        }
+                    }
+                },
+                "is_associated": {
+                    "type": "boolean",
+                    "required": true
+                },
+                "date_asserted": {
+                    "type": "string",
+                    "format": "date-time",
+                    "required": true
+                },
+                "provenance_type": {
+                    "type": "object",
+                    "id": "urn:jsonschema:org:cttv:input:model:ProvenanceType",
+                    "properties": {
+                        "expert": {
+                            "type": "object",
+                            "required": false,
+                            "id": "urn:jsonschema:org:cttv:input:model:ProvenanceExpert",
+                            "properties": {
+                                "statement": {
+                                    "type": "string",
+                                    "required": false
+                                },
+                                "author": {
+                                    "type": "object",
+                                    "required": false,
+                                    "id": "urn:jsonschema:org:cttv:input:model:ProvenanceAuthor",
+                                    "properties": {
+                                        "organization": {
+                                            "type": "string",
+                                            "required": false
+                                        },
+                                        "email": {
+                                            "required": false,
+                                            "type": "string",
+                                            "format": "email"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "status": {
+                                    "type": "boolean"
+                                }
+                            }
+                        },
+                        "literature": {
+                            "type": "object",
+                            "required": false,
+                            "id": "urn:jsonschema:org:cttv:input:model:ProvenanceLiterature",
+                            "properties": {
+                                "pubmed_refs": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "pattern": "http://identifiers.org/pubmed/[0-9]+$",
+                                        "minItems": 1,
+                                        "uniqueItems": true
+                                    }
+                                }
+                            }
+                        },
+                        "database": {
+                            "type": "object",
+                            "required": false,
+                            "id": "urn:jsonschema:org:cttv:input:model:ProvenanceDatabase",
+                            "properties": {
+                                "dbxref": {
+                                    "type": "object",
+                                    "id": "urn:jsonschema:org:cttv:input:model:ProvenanceDatabaseXRef",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "http://identifiers.org/.+$",
+                                            "description": "Please use the identifiers.org DB namespace to identify the dbxref name: e.g. http://identifiers.org/orphanet"
+                                        },
+                                        "url": {
+                                            "type": "string",
+                                            "pattern": "http://identifiers.org/.+/.+$",
+                                            "description": "Please use the identifiers.org URI syntax to point to the original resource: e.g. http://identifiers.org/orphanet/93298"                                            
+                                        },
+                                        "version": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "id": {
+                                    "type": "string"
+                                },
+                                "version": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "biological_object": {
+            "type": "object",
+            "id": "urn:jsonschema:org:cttv:input:model:BiologicalObject",
+            "required": true,
+            "description": "The biological object is any biological entity that can be expressed with a http://identifiers.org/ URN e.g. http://identifiers.org/ensembl/ENSG9023124 or http://identifiers.org/pfam/PF00619",
+            "properties": {
+                "about": {
+                    "type": "array",
+                    "description": "An array of http://identifiers.org/ URNs. For example, if denoting a set of EFO phenotypes: [http://identifiers.org/efo/0000537, http://identifiers.org/efo/0000522]",
+                    "required": true,
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "pattern": "^http://identifiers.org/.+/.+$"
+                    }
+                },
+                "properties": {
+                    "type": "object",
+                    "required": false,
+                    "id": "urn:jsonschema:org:cttv:input:model:BiologicalObjectProperties",
+                    "properties": {
+                        "biosamples": {
+                            "type": "array",
+                            "required": false,
+                            "description": "An array of affected tissues expressed using its EFO term e.g. http://identifiers.org/uberon/UBERON:0004535, the uberon URI for cardiovascular system",
+                            "items": {
+                                "type": "string",
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "pattern": "^http://identifiers.org/.+/.+"
+                            }
+                        },
+                        "experiment_specific": {
+                            "type": "object",
+                            "required": false,
+                            "description": "Use this to add any string-based key:value pairs that you want to use to describe your biological object.",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
