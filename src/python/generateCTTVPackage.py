@@ -282,12 +282,17 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                     myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not re.match(\"[\\w.-]+@[\\w.-]+.\\w+\", self." + propertyName + "):\n"
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' is not a valid email address\\n\".format(self."+propertyName+"))\n"
                 elif skeleton['format'] == "date-time":
-                    # This SHOULD be a date in ISO 8601 format of YYYY-MM-DDThh:mm:ssZ in UTC time.  This is the recommended form of date/timestamp
+                    '''
+                     This SHOULD be a date in ISO 8601 format of YYYY-MM-DDThh:mm:ssZ in UTC time.  This is the recommended form of date/timestamp
+                     However, the ISO 8601 allows for fraction of a second like YYYY-MM-DDThh:mm:ss.sTZD (eg 1997-07-16T19:20:30.45+01:00)
+                     So "2014-10-16T13:47:17.000+01:00" would be a valid datetime. 
+                     Reference: http://www.w3.org/TR/NOTE-datetime
+                    '''
                     myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None:\n"
                     myMap['__validate__'] += indent*2 + "try:\n"
-                    myMap['__validate__'] += indent*3 + "aniso8601.parse_datetime('"+propertyName+"')\n"
-                    myMap['__validate__'] += indent*2 + "except ValueError, e:\n"
-                    myMap['__validate__'] += indent*3 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ssZ in UTC time expected)\\n\".format(self."+propertyName+"))\n"
+                    myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
+                    myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
+                    myMap['__validate__'] += indent*3 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\\n\".format(self."+propertyName+"))\n"
             if dataType == 'string':
                 '''
                  A string is initialised to None by default
@@ -306,12 +311,54 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                 '''
                 myMap['__init__'] += indent + "self." + propertyName + " = 0\n"
                 myMap['__default__'] = propertyName + " = 0"
+                '''
+                 Constraints specific to numbers:
+                  minimum, 
+                  maximum, 
+                  exclusiveMaximum, 
+                  exclusiveMinimum
+                '''
+                constraint = []
+                message = []
+                if (skeleton.has_key('minimum')):
+                    minimum = skeleton['minimum']
+                    constraint.append("self.{0} > {1}".format(propertyName, minimum) if (skeleton.has_key('exclusiveMinimum')) else "self.{0} >= {1}".format(propertyName, minimum))
+                    message.append("should be greater than {0}".format(minimum) if (skeleton.has_key('exclusiveMinimum')) else "should be greater than or equal to {0}".format(minimum))
+                if (skeleton.has_key('maximum')):
+                    maximum = skeleton['maximum']
+                    constraint.append("self.{0} < {1}".format(propertyName, maximum) if (skeleton.has_key('exclusiveMaximum')) else "self.{0} <= {1}".format(propertyName, maximum))
+                    message.append("should be lower than {0}".format(minimum) if (skeleton.has_key('exclusiveMinimum')) else "should be lower than or equal to {0}".format(maximum))
+                if (len(constraint)>0):
+                    if not myMap.has_key('__validate__'):
+                        myMap['__validate__'] = ""
+                    myMap['__validate__'] += indent + "if {0}:".format(" or ".join(constraint))
+                    myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' {2}\\n\")\n".format(parentName, propertyName, " and ".join(message))                    
             elif dataType == 'array':
                 '''
                  An array is created empty by default
                 '''
                 myMap['__init__'] += indent + "self." + propertyName + " = []\n"
                 myMap['__default__'] = propertyName + " = []"
+                '''
+                 There are some constraints specific to arrays:
+                   minItems
+                '''
+                if (skeleton.has_key('minItems')):
+                    if not myMap.has_key('__validate__'):
+                        myMap['__validate__'] = ""
+                    myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) <= {1}:\n".format(propertyName, skeleton['minItems'])
+                    myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array should have at least {2} elements\\n\")\n".format(parentName, propertyName, skeleton['minItems'])
+                if (skeleton.has_key('maxItems')):
+                    if not myMap.has_key('__validate__'):
+                        myMap['__validate__'] = ""
+                    myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) >= {1}:\n".format(propertyName, skeleton['maxItems'])
+                    myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array should have at most {2} elements\\n\")\n".format(parentName, propertyName, skeleton['maxItems'])
+                if (skeleton.has_key('uniqueItems')):
+                    if not myMap.has_key('__validate__'):
+                        myMap['__validate__'] = ""
+                    myMap['__validate__'] += indent + "if self.{0} == None or len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
+                    myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array have duplicated elements\\n\")\n".format(parentName, propertyName)               
+               
     else:
         '''
          This data type is unknown
@@ -320,7 +367,7 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
     if bCreateFile:
         # dump
         #classfile.write('\n'.join(myMap['classes']))
-        classfile.write('import re\nimport sys\nimport aniso8601\nimport types\n')
+        classfile.write('import re\nimport sys\nimport iso8601\nimport types\n')
         for c in myMap['classes']:
             classfile.write(c)
         classfile.close()
