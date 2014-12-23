@@ -327,7 +327,7 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                 if (skeleton.has_key('maximum')):
                     maximum = skeleton['maximum']
                     constraint.append("self.{0} < {1}".format(propertyName, maximum) if (skeleton.has_key('exclusiveMaximum')) else "self.{0} <= {1}".format(propertyName, maximum))
-                    message.append("should be lower than {0}".format(minimum) if (skeleton.has_key('exclusiveMinimum')) else "should be lower than or equal to {0}".format(maximum))
+                    message.append("should be lower than {0}".format(minimum) if (skeleton.has_key('exclusiveMaximum')) else "should be lower than or equal to {0}".format(maximum))
                 if (len(constraint)>0):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
