@@ -8,6 +8,63 @@ import re
 import shutil
 import optparse
 
+setup = '''
+import os
+
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils import setup
+
+long_description = open(os.path.join(os.path.dirname(__file__), "README.rst")).read()
+
+setup(
+    name="org.cttv.input.model",
+    version="0.1.1",
+    description=long_description.split("\\n")[0],
+    long_description=long_description,
+    author="Gautier Koscielny",
+    author_email="gautier.x.koscielny@gsk.com",
+    url="https://github.com/CTTV",
+    packages=["org.cttv.input.model"],
+    license="Apache2",
+    classifiers=[
+        "License :: Apache 2",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
+    ],
+)
+
+'''
+
+readme = '''
+Simple module to validate and generate CTTV evidence strings
+
+'''
+
+license = '''
+Copyright (c) 2014 - 2015 Gautier Koscielny
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
+
 parser = optparse.OptionParser()
 parser.add_option('-d', '--directory', default='../../build', dest='exportDirectory')
 parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/CTTV/input_data_format/master/json_schema/evidence_string_schema.json', dest='json_schema_uri')
@@ -373,24 +430,19 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
         classfile.close()
     return myMap
     
-def generate_setup():
-    setupString = "from setuptools import setup\n"
-    setupString += "	setup(name='org.cttv.input.model',\n"
-    setupString += "version='0.1',\n"
-    setupString += "description='CTTV data model',\n"
-    setupString += "url='http://github.com/CTTV',\n"
-    setupString += "author='Gautier Koscielny',\n"
-    setupString += "author_email='gautier.x.koscielny@gsk.com',\n"
-    setupString += "license='Apache2',\n"
-    setupString += "packages=['org.cttv.input.model'],\n"
-    setupString += "zip_safe=False)\n"
-
-
+def generate_file(contents, filename):
+    moduleFile = open(options.exportDirectory + "/" + filename, 'w')
+    moduleFile.write(contents)
+    moduleFile.close()
+    
 # read directly from the URL
 data = urlopen( options.json_schema_uri ).read()
 decoded = json.loads(data)
 generate_classes(decoded, True)
-generate_setup()
+generate_file(license, "LICENSE")
+generate_file(readme, "README.rst")
+generate_file(setup, "setup.py")
+
 
 #pprint(data)
 
