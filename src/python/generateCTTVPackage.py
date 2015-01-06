@@ -16,6 +16,11 @@ wheel>=0.22.0
 iso8601>=0.1.10
 '''
 
+manifest = '''
+recursive-include org *.py
+include README.rst LICENSE tox.ini setup.py *requirements.txt
+'''
+
 tox = '''
 [tox]
 envlist = py27
@@ -646,6 +651,7 @@ generate_file(readme, "README.rst")
 generate_file(setup, "setup.py")
 generate_file(tox, "tox.ini")
 generate_file(requirements, "requirements.txt")
+generate_file(manifest, "MANIFEST.in")
 shutil.copy2(testDirectory +'/test_org_cttv_input_model.py', options.exportDirectory + "/org/cttv/input/model/test_org_cttv_input_model.py")
 
 #pprint(data)
