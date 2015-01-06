@@ -9,13 +9,20 @@ import shutil
 import optparse
 import shutil
 
+requirements = '''
+pytest>=2.5.2
+tox>=1.7.0
+wheel>=0.22.0
+iso8601>=0.1.10
+'''
+
 tox = '''
 [tox]
-envlist = py26,py27,py32,py33,pypy
+envlist = py27
 
 [testenv]
 deps=pytest>=2.4.2
-commands=py.test --verbose org.cttv.input.model
+commands=py.test --verbose org/cttv/input/model/test_org_cttv_input_model.py
 setenv =
     LC_ALL=C
 '''
@@ -638,6 +645,7 @@ generate_file(license, "LICENSE")
 generate_file(readme, "README.rst")
 generate_file(setup, "setup.py")
 generate_file(tox, "tox.ini")
+generate_file(requirements, "requirements.txt")
 shutil.copy2(testDirectory +'/test_org_cttv_input_model.py', options.exportDirectory + "/org/cttv/input/model/test_org_cttv_input_model.py")
 
 #pprint(data)
