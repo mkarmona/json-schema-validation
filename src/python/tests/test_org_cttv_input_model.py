@@ -13,9 +13,9 @@ def test_evidenceString_exists():
     evidenceString = cttv.EvidenceString()
     assert not evidenceString == None
 
-#def test_evidenceString_dummy():
-#    evidenceString = cttv.EvidenceString()
-#    assert 1 == 2
+def test_evidenceString_dummy():
+    evidenceString = cttv.EvidenceString()
+    assert 1 == 2
 
 def foo():
   pass
