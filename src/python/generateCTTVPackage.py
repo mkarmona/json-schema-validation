@@ -26,7 +26,9 @@ tox = '''
 envlist = py27
 
 [testenv]
-deps=pytest>=2.4.2
+deps=
+  pytest>=2.4.2
+  iso8601>=0.1.10
 commands=py.test -rrequirements.txt --verbose org/cttv/input/model/test_org_cttv_input_model.py
 setenv =
     LC_ALL=C
