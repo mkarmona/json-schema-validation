@@ -27,7 +27,7 @@ envlist = py27
 
 [testenv]
 deps=pytest>=2.4.2
-commands=py.test --verbose org/cttv/input/model/test_org_cttv_input_model.py
+commands=py.test -rrequirements.txt --verbose org/cttv/input/model/test_org_cttv_input_model.py
 setenv =
     LC_ALL=C
 '''
