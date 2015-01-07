@@ -1,6 +1,6 @@
 import sys
 # the following dir contains the init file
-sys.path.append('../../../build')
+sys.path.append('.')
 
 import copy
 import pickle
