@@ -1,1 +1,1 @@
-python_jsonschema_objects
+pytest>=2.5.2
