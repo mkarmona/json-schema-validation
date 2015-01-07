@@ -1,6 +1,6 @@
 from urllib2 import *
 from pprint import pprint
-import python_jsonschema_objects as pjs
+#import python_jsonschema_objects as pjs
 import json 
 import copy
 import sys
