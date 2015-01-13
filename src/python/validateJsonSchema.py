@@ -12,9 +12,17 @@ from json import JSONEncoder
 
 python_raw = json.load(sys.stdin)
 
-c = 0
-for currentItem in python_raw:
-    print "Entry Nb {0}\n".format(c)
-    evidenceString = cttv.EvidenceString.fromMap(currentItem)
+if type(python_raw) is list:
+    c = 0
+    for currentItem in python_raw:
+        print "Entry Nb {0}\n".format(c)
+        # debug mode
+        repr(curre)
+        evidenceString = cttv.EvidenceString.fromMap(currentItem)
+        evidenceString.validate()
+        c +=1
+elif type(python_raw) is dict:
+    evidenceString = cttv.EvidenceString.fromMap(python_raw)
     evidenceString.validate()
-    c +=1
+else:
+    print "ERROR: impossible to parse the input stream\n"
