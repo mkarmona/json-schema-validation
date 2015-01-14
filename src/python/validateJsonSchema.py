@@ -17,7 +17,6 @@ if type(python_raw) is list:
     for currentItem in python_raw:
         print "Entry Nb {0}\n".format(c)
         # debug mode
-        repr(curre)
         evidenceString = cttv.EvidenceString.fromMap(currentItem)
         evidenceString.validate()
         c +=1
