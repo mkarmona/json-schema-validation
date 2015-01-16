@@ -1,4 +1,4 @@
-from urllib2 import *
+﻿from urllib2 import *
 from pprint import pprint
 #import python_jsonschema_objects as pjs
 import json 
@@ -50,6 +50,9 @@ setup(
     author="Gautier Koscielny",
     author_email="gautier.x.koscielny@gsk.com",
     url="https://github.com/CTTV",
+    #packages=find_packages('.'),
+    #package_dir = {'': '.'},
+    #namespace_packages = ["org", "org.cttv", "org.cttv.input"],    
     packages=["org.cttv.input.model"],
     license="Apache2",
     classifiers=[
@@ -339,10 +342,20 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                             os.makedirs(options.exportDirectory + "/" + dirpath)
                         # create an init file recursively too (use the raw variable)
                         index = 0
-                        for i in range(len(raw)-1):
-                            # __init__.py
+                        for i in range(1, len(raw)-1):
+                            '''
+                            __init__.py
+                              
+                            A project’s source tree must include the namespace packages’ __init__.py files 
+                            (and the __init__.py of any parent packages)
+                            These __init__.py files must contain the line:
+                            __import__('pkg_resources').declare_namespace(__name__)
+                            '''
                             classfile = open(options.exportDirectory + "/" + "/".join(raw[index:i]) + "/__init__.py", 'w')
-                            classfile.write('#package ' + ".".join(raw[index:i]))
+                            classfile.write('#package ' + ".".join(raw[index:i]) + "\n")
+                            #classfile.write("__import__('pkg_resources').declare_namespace(__name__)")
+                            classfile.write("from pkgutil import extend_path\n")
+                            classfile.write("__path__ = extend_path(__path__, __name__)")
                             classfile.close()
                         # Finally create a file there and keep the file handler open
                         classfile = open(options.exportDirectory + "/" + dirpath + "/__init__.py", 'w')
