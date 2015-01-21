@@ -283,6 +283,7 @@ options, args = parser.parse_args()
 pattern = re.compile('^urn:jsonschema:(.+)$')
 classfile = 0
 testDirectory = 'tests'
+schemaVersion = None
 
 if not os.path.exists(options.exportDirectory):
     os.makedirs(options.exportDirectory)
@@ -295,6 +296,7 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
      if required fields are defined, in the correct format (date, email) or following a
      specific pattern rule (identifiers, etc.)
     '''
+    global schemaVersion
     myMap = {}
     myMap['attributes'] = {}
     myMap['classes'] = list()
@@ -316,6 +318,8 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
             
         if dataType == 'object':
             className = None
+            if depth == 0 and 'version' in skeleton:
+                schemaVersion = skeleton['version']
             if (skeleton.has_key('id')):
                 myMap['isAClass'] = True
                 classId = skeleton['id']
@@ -381,7 +385,7 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                     childMap = generate_classes(skeleton[attribute_key], False, attribute_key, className, depth+1)
                     myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
-                    myMap['classes'].extend(childMap['classes'])					
+                    myMap['classes'].extend(childMap['classes'])
             elif (className == 'ProbabilityScore' or className == 'PValueScore'):
                 # this is a hack since the JSON Schema is not consistent
                 for attribute_key in ['value', 'method']:
@@ -400,12 +404,12 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                 '''
                 if (skeleton.has_key('additionalProperties')):
                     if (skeleton.has_key('required')) and skeleton['required']:
-                        myMap['__init__'] += indent + "self." + propertyName + " = {}\n"
-                        myMap['__default__'] = propertyName + " = {}"
+                        myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = {}\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
+                        myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "obj." + propertyName + " = clone." + propertyName + "\n"
                         myMap['__map__'] = indent + "obj." + propertyName + " = map['" + propertyName + "']\n"
                     else:
-                        myMap['__init__'] += indent + "self." + propertyName + " = None\n"
+                        myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                         myMap['__clone__'] += indent*2 + "obj." + propertyName + " = clone." + propertyName + "\n"
@@ -418,8 +422,8 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                         #m = re.match("^urn:jsonschema:(.+)$", classId)
                 elif myMap['isAClass']:
                     if (skeleton.has_key('required')) and skeleton['required']:
-                        myMap['__init__'] += indent + "self." + propertyName + " = " + className + "()\n"
-                        myMap['__default__'] = propertyName + " = " + className + "()"
+                        myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = " + className + "()\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
+                        myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "obj." + propertyName + " = " + className + "(clone." + propertyName + ")\n"
                         myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
@@ -451,9 +455,9 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                  1. default initialisation method
                 '''
                 arrayDefaultValues = []
-                classDefinition += baseindent + "def initialise(self):\n"
+                #classDefinition += baseindent + "def initialise(self):\n"
                 for attribute_key in myMap['attributes']:
-                    classDefinition += myMap['attributes'][attribute_key]['__init__']
+                    #classDefinition += myMap['attributes'][attribute_key]['__init__']
                     arrayDefaultValues.append(myMap['attributes'][attribute_key]['__default__'])
                 '''
                  2. and another constructor again but with all attributes as arguments
@@ -464,7 +468,8 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                     arguments = ", ".join(arrayDefaultValues)
                     classDefinition += baseindent + "def __init__(self, {0}):\n".format(arguments)
                     for attribute_key in myMap['attributes']:
-                        classDefinition += myMap['attributes'][attribute_key]['__assign__']
+                        classDefinition += myMap['attributes'][attribute_key]['__init__']
+                        #classDefinition += myMap['attributes'][attribute_key]['__assign__']
                 '''
                  3. and a deep copy one (clone) as class method
                 '''
@@ -499,6 +504,12 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                         classDefinition += myMap['attributes'][attribute_key]['__validate__']
                 classDefinition += baseindent*2 + "sys.stderr.flush()\n"
                 '''
+                 6. Add other methods if any
+                '''
+                for attribute_key in myMap['attributes']:
+                    if myMap['attributes'][attribute_key].has_key('__methods__'):
+                        classDefinition += myMap['attributes'][attribute_key]['__methods__']
+                '''
                  Finally store the class definition in the classes list
                 '''
                 myMap['classes'].extend(classDefinition)                        
@@ -509,11 +520,14 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
              2. generate the python code to initialise the variable in the clone/map constructor
              3. check the field is required or not
              4. validate the value of the field according to regex or format
+             5. generate extra methods
             '''
             indent = baseindent*2
             myMap['__init__'] = indent + "\n" + indent + "# Name: " + propertyName + "\n"
             myMap['__init__'] += indent + "# Type: " + dataType + "\n"
             myMap['__assign__'] = indent + "self." + propertyName + " = " + propertyName + "\n"
+            myMap['__methods__'] = ""
+            
             '''
              Add the description as a comment
             '''
@@ -570,23 +584,28 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                     myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
                     myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
                     myMap['__validate__'] += indent*3 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\\n\".format(self."+propertyName+"))\n"
+
+                    '''
+                    Add method to convert to an ISODate
+                    '''
+                    myMap['__methods__'] += baseindent + "def " + propertyName + "to_isoformat(self):\n" + indent + "iso8601.parse_date(self."+propertyName+").isoformat()\n"
             if dataType == 'string':
                 '''
                  A string is initialised to None by default
                 '''
-                myMap['__init__'] += indent + "self." + propertyName + " = None\n"
+                myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"
                 myMap['__default__'] = propertyName + " = None"
             elif dataType == 'boolean':
                 '''
                  A boolean is initialised to False by default
                 '''
-                myMap['__init__'] += indent + "self." + propertyName + " = False" + "\n"
+                myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"
                 myMap['__default__'] = propertyName + " = False"
             elif dataType == 'number':
                 '''
                  A number is initialised to nought by default
                 '''
-                myMap['__init__'] += indent + "self." + propertyName + " = 0\n"
+                myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"
                 myMap['__default__'] = propertyName + " = 0"
                 '''
                  Constraints specific to numbers:
@@ -614,8 +633,8 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                 '''
                  An array is created empty by default
                 '''
-                myMap['__init__'] += indent + "self." + propertyName + " = []\n"
-                myMap['__default__'] = propertyName + " = []"
+                myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = []\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
+                myMap['__default__'] = propertyName + " = None"
                 '''
                  There are some constraints specific to arrays:
                    minItems
@@ -633,7 +652,7 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                 if (skeleton.has_key('uniqueItems')):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
-                    myMap['__validate__'] += indent + "if self.{0} == None or len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
+                    myMap['__validate__'] += indent + "if self.{0} != None and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array have duplicated elements\\n\")\n".format(parentName, propertyName)               
                
     else:
