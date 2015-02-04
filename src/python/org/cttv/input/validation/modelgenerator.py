@@ -36,7 +36,7 @@ envlist = py27
 
 [testenv]
 deps=-r{toxinidir}/requirements.txt
-changedir={toxinidir}/tests
+changedir={toxinidir}/org/cttv/input/model/tests
 commands=nosetests
 #deps= -rrequirements.txt
 #commands=py.test --verbose org/cttv/input/model/test_org_cttv_input_model.py
