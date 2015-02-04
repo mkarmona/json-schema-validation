@@ -283,7 +283,7 @@ license = '''
    limitations under the License.
 '''
 
-def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, depth=0):
+def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, parentName=None, depth=0):
     '''
      This method generates all the python classes representing evidence string concepts
      as defined in the JSON Schema definition.
@@ -291,7 +291,7 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
      if required fields are defined, in the correct format (date, email) or following a
      specific pattern rule (identifiers, etc.)
     '''
-    global schemaVersion
+    schemaVersion = None
     myMap = {}
     myMap['attributes'] = {}
     myMap['classes'] = list()
@@ -334,11 +334,11 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                     className = raw[-1]
                     if bCreateFile:
                         # remove existing package to replace with new version
-                        if os.path.exists(options.exportDirectory + "/" + raw[0]):
-                            shutil.rmtree(options.exportDirectory + "/" + raw[0])
+                        if os.path.exists(exportDirectory + "/" + raw[0]):
+                            shutil.rmtree(exportDirectory + "/" + raw[0])
                         # create directory recursively
-                        if not os.path.exists(options.exportDirectory + "/" + dirpath):
-                            os.makedirs(options.exportDirectory + "/" + dirpath)
+                        if not os.path.exists(exportDirectory + "/" + dirpath):
+                            os.makedirs(exportDirectory + "/" + dirpath)
                         # create an init file recursively too (use the raw variable)
                         index = 0
                         for i in range(1, len(raw)-1):
@@ -350,24 +350,24 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                             These __init__.py files must contain the line:
                             __import__('pkg_resources').declare_namespace(__name__)
                             '''
-                            classfile = open(options.exportDirectory + "/" + "/".join(raw[index:i]) + "/__init__.py", 'w')
+                            classfile = open(exportDirectory + "/" + "/".join(raw[index:i]) + "/__init__.py", 'w')
                             classfile.write('#package ' + ".".join(raw[index:i]) + "\n")
                             #classfile.write("__import__('pkg_resources').declare_namespace(__name__)")
                             classfile.write("from pkgutil import extend_path\n")
                             classfile.write("__path__ = extend_path(__path__, __name__)")
                             classfile.close()
                         # Finally create a file there and keep the file handler open
-                        classfile = open(options.exportDirectory + "/" + dirpath + "/__init__.py", 'w')
+                        classfile = open(exportDirectory + "/" + dirpath + "/__init__.py", 'w')
             if (skeleton.has_key('properties')):
                 for attribute_key in skeleton['properties']:
-                    childMap = generate_classes(skeleton['properties'][attribute_key], False, attribute_key, className, depth+1)
+                    childMap = generate_classes(exportDirectory, skeleton['properties'][attribute_key], False, attribute_key, className, depth+1)
                     myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
                     myMap['classes'].extend(childMap['classes'])
             elif (className == 'AssociationScore'):
                 # this is a hack since the JSON Schema is not consistent
                 for attribute_key in ['probability', 'pvalue']:
-                    childMap = generate_classes(skeleton[attribute_key], False, attribute_key, className, depth+1)
+                    childMap = generate_classes(exportDirectory, skeleton[attribute_key], False, attribute_key, className, depth+1)
                     myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
                     myMap['classes'].extend(childMap['classes'])
@@ -377,14 +377,14 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
                  concepts are defined.
                 '''
                 for attribute_key in ['experiment_specific', 'evidence_chain']:
-                    childMap = generate_classes(skeleton[attribute_key], False, attribute_key, className, depth+1)
+                    childMap = generate_classes(exportDirectory, skeleton[attribute_key], False, attribute_key, className, depth+1)
                     myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
                     myMap['classes'].extend(childMap['classes'])
             elif (className == 'ProbabilityScore' or className == 'PValueScore'):
                 # this is a hack since the JSON Schema is not consistent
                 for attribute_key in ['value', 'method']:
-                    childMap = generate_classes(skeleton[attribute_key], False, attribute_key, className, depth+1)
+                    childMap = generate_classes(exportDirectory, skeleton[attribute_key], False, attribute_key, className, depth+1)
                     myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
                     myMap['classes'].extend(childMap['classes'])
@@ -692,11 +692,19 @@ def generate_classes(skeleton, bCreateFile, propertyName=None, parentName=None, 
         classfile.close()
     return myMap
     
-def generate_file(contents, filename):
-    moduleFile = open(options.exportDirectory + "/" + filename, 'w')
+def generate_file(exportDirectory, contents, filename):
+    moduleFile = open(exportDirectory + "/" + filename, 'w')
     moduleFile.write(contents)
     moduleFile.close()
  
+#
+# Package Generator class
+#
+class DataModelGenerator(object):
+    # Virtual Functions
+    _generate_file = staticmethod(generate_file)
+    _generate_classes = staticmethod(generate_classes)
+
 def main():
 
     parser = optparse.OptionParser()
@@ -708,7 +716,6 @@ def main():
     pattern = re.compile('^urn:jsonschema:(.+)$')
     classfile = 0
     testDirectory = 'tests'
-    schemaVersion = None
 
     if not os.path.exists(options.exportDirectory):
         os.makedirs(options.exportDirectory)
@@ -717,25 +724,17 @@ def main():
     # read directly from the URL
     data = urlopen( options.json_schema_uri ).read()
     decoded = json.loads(data)
-    generator.generate_classes(decoded, True)
-    generate_file(license, "LICENSE")
-    generate_file(readme, "README.rst")
-    generate_file(setup, "setup.py")
-    generate_file(tox, "tox.ini")
-    generate_file(requirements, "requirements.txt")
-    generate_file(manifest, "MANIFEST.in")
+    generator._generate_classes(options.exportDirectory, decoded, True)
+    generate_file(options.exportDirectory, license, "LICENSE")
+    generator._generate_file(options.exportDirectory, readme, "README.rst")
+    generator._generate_file(options.exportDirectory, setup, "setup.py")
+    generator._generate_file(options.exportDirectory, tox, "tox.ini")
+    generator._generate_file(options.exportDirectory, requirements, "requirements.txt")
+    generator._generate_file(options.exportDirectory, manifest, "MANIFEST.in")
     shutil.copy2(testDirectory +'/test_org_cttv_input_model.py', options.exportDirectory + "/org/cttv/input/model/test_org_cttv_input_model.py")
     print 'The package has been generated in ', options.exportDirectory
     # exit here
     sys.exit()
-
-#
-# Package Generator class
-#
-class DataModelGenerator(object):
-    # Virtual Functions
-    _generate_file = staticmethod(generate_file)
-    _generate_classes = staticmethod(generate_classes)
     
 if __name__ == "__main__":
     main()
