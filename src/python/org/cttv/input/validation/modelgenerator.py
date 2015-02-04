@@ -19,7 +19,7 @@ import optparse
 import shutil
 
 requirements = '''
-
+nose>=1.3.4
 tox>=1.7.0
 wheel>=0.22.0
 iso8601>=0.1.10
