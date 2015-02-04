@@ -735,6 +735,7 @@ def main():
 class DataModelGenerator(object):
     # Virtual Functions
     _generate_file = staticmethod(generate_file)
-
+    _generate_classes = staticmethod(generate_classes)
+    
 if __name__ == "__main__":
     main()
