@@ -19,7 +19,7 @@ import optparse
 import shutil
 
 requirements = '''
-pytest>=2.5.2
+
 tox>=1.7.0
 wheel>=0.22.0
 iso8601>=0.1.10
@@ -35,8 +35,11 @@ tox = '''
 envlist = py27
 
 [testenv]
-deps= -rrequirements.txt
-commands=py.test --verbose org/cttv/input/model/test_org_cttv_input_model.py
+deps=-r{toxinidir}/requirements.txt
+changedir={toxinidir}/tests
+commands=nosetests
+#deps= -rrequirements.txt
+#commands=py.test --verbose org/cttv/input/model/test_org_cttv_input_model.py
 setenv =
     LC_ALL=C
 '''
