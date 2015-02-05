@@ -607,7 +607,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
                     myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
                     myMap['__validate__'] += indent*3 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\\n\".format(self."+propertyName+"))\n"
-                    myMap['__validate__'] += indent*2 + "error = True\n"
+                    myMap['__validate__'] += indent*3 + "error = True\n"
 
                     '''
                     Add method to convert to an ISODate
