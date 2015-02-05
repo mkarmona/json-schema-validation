@@ -657,7 +657,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 if (len(constraint)>0):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
-                    myMap['__validate__'] += indent + "if {0}:".format(" or ".join(constraint))
+                    myMap['__validate__'] += indent + "if {0}:\n".format(" or ".join(constraint))
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}': {2} {3}\\n\".format(self.{1}))\n".format(parentName, propertyName, "{0}", " and ".join(message))  
                     myMap['__validate__'] += indent*2 + "error = True\n"
                     
