@@ -428,10 +428,13 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                         myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
                         myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
-                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required'\\n\")\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
                         myMap['__validate__'] += indent*2 + "error = True\n"
                         myMap['__validate__'] += indent + "else:\n"
-                        myMap['__validate__'] += indent*2 + "error = error or self." + propertyName+".validate(logger)\n"         
+                        myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger)\n" 
+                        myMap['__validate__'] += indent*2 + "if " + propertyName + "_error:\n" 
+                        myMap['__validate__'] += indent*2 + "logger.error(self." + propertyName +".to_JSON())\n"
+                        myMap['__validate__'] += indent*2 + "error = error or "+ propertyName + "_error"         
                     else:
                         myMap['__init__'] += indent + "self." + propertyName + " = None\n"
                         myMap['__default__'] = indent + propertyName + " = None"
@@ -567,7 +570,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
                 myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required'\")\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
                 myMap['__validate__'] += indent*2 + "error = True\n"
                 
             else:
