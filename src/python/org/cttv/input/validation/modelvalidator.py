@@ -14,7 +14,7 @@ def main():
     python_raw = json.load(sys.stdin)
 
     validator = DataModelValidator()
-    validator.validate(python_raw)
+    validator._validate(python_raw)
     
 def validate(python_raw):
     if type(python_raw) is list:
