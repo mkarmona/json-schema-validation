@@ -428,6 +428,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
                         myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
                         myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: "+parentName+" - '"+propertyName+"' is required'\\n\")\n"
+                        myMap['__validate__'] += indent*2 + "error = True"
                         myMap['__validate__'] += indent + "else:\n"
                         myMap['__validate__'] += indent*2 + "self." + propertyName+".validate()\n"            
                     else:
@@ -503,10 +504,12 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                  5. and a validate method
                 '''
                 classDefinition += baseindent + "def validate(self):\n"
+                classDefinition += baseindent*2 + "error = False\n"
                 for attribute_key in myMap['attributes']:
                     if myMap['attributes'][attribute_key].has_key('__validate__'):
                         classDefinition += myMap['attributes'][attribute_key]['__validate__']
                 classDefinition += baseindent*2 + "sys.stderr.flush()\n"
+                classDefinition += baseindent*2 + "return error\n"
                 '''
                  6. Add other methods if any
                 '''
@@ -564,6 +567,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
                 myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
                 myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: "+parentName+" - '"+propertyName+"' is required'\\n\")\n"
+                myMap['__validate__'] += indent*2 + "error = True"
                 
             else:
                 myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
@@ -590,6 +594,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 if skeleton['format'] == "email":
                     myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not re.match(\"[\\w.-]+@[\\w.-]+.\\w+\", self." + propertyName + "):\n"
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' is not a valid email address\\n\".format(self."+propertyName+"))\n"
+                    myMap['__validate__'] += indent*2 + "error = True"
                 elif skeleton['format'] == "date-time":
                     '''
                      This SHOULD be a date in ISO 8601 format of YYYY-MM-DDThh:mm:ssZ in UTC time.  This is the recommended form of date/timestamp
@@ -602,6 +607,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
                     myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
                     myMap['__validate__'] += indent*3 + "sys.stderr.write(\"ERROR: "+parentName+" - "+propertyName+" '{0}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\\n\".format(self."+propertyName+"))\n"
+                    myMap['__validate__'] += indent*2 + "error = True"
 
                     '''
                     Add method to convert to an ISODate
@@ -652,7 +658,9 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if {0}:".format(" or ".join(constraint))
-                    myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}': {2} {3}\\n\".format(self.{1}))\n".format(parentName, propertyName, "{0}", " and ".join(message))                    
+                    myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}': {2} {3}\\n\".format(self.{1}))\n".format(parentName, propertyName, "{0}", " and ".join(message))  
+                    myMap['__validate__'] += indent*2 + "error = True"
+                    
             elif dataType == 'array':
                 '''
                  An array is created empty by default
@@ -670,17 +678,19 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) < {1}:\n".format(propertyName, skeleton['minItems'])
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array should have at least {2} elements\\n\")\n".format(parentName, propertyName, skeleton['minItems'])
+                    myMap['__validate__'] += indent*2 + "error = True"
                 if (skeleton.has_key('maxItems')):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) > {1}:\n".format(propertyName, skeleton['maxItems'])
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array should have at most {2} elements\\n\")\n".format(parentName, propertyName, skeleton['maxItems'])
-                if (skeleton.has_key('uniqueItems')):
+                    myMap['__validate__'] += indent*2 + "error = True"
+                    if (skeleton.has_key('uniqueItems')):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if self.{0} != None and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array have duplicated elements\\n\")\n".format(parentName, propertyName)               
-               
+                    myMap['__validate__'] += indent*2 + "error = True"
     else:
         '''
          This data type is unknown
@@ -689,7 +699,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
     if bCreateFile:
         # dump
         #classfile.write('\n'.join(myMap['classes']))
-        classfile.write('import re\nimport sys\nimport iso8601\nimport types\nimport json\n')
+        classfile.write('import re\nimport sys\nimport iso8601\nimport types\nimport json\nimport logging\n')
         for c in myMap['classes']:
             classfile.write(c)
         classfile.close()

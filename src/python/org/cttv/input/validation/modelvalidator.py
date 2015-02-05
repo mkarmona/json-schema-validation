@@ -14,23 +14,27 @@ def main():
     python_raw = json.load(sys.stdin)
 
     validator = DataModelValidator()
-    validator._validate(python_raw)
-    
+    r = validator._validate(python_raw)
+    sys.exit(r)
+
 def validate(python_raw):
+    result = 0
     if type(python_raw) is list:
         c = 0
         for currentItem in python_raw:
             print "Entry Nb {0}\n".format(c)
             # debug mode
             evidenceString = cttv.EvidenceString.fromMap(currentItem)
-            evidenceString.validate()
+            r = evidenceString.validate()
+            if r == False:
+                result = 1
             c +=1
     elif type(python_raw) is dict:
         evidenceString = cttv.EvidenceString.fromMap(python_raw)
         evidenceString.validate()
     else:
         print "ERROR: impossible to parse the input stream\n"
-
+    return 0
 #
 # DataModel Validator class
 #
