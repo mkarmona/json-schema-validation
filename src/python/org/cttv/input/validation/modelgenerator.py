@@ -685,7 +685,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) > {1}:\n".format(propertyName, skeleton['maxItems'])
                     myMap['__validate__'] += indent*2 + "sys.stderr.write(\"ERROR: {0} - '{1}' array should have at most {2} elements\\n\")\n".format(parentName, propertyName, skeleton['maxItems'])
                     myMap['__validate__'] += indent*2 + "error = True"
-                    if (skeleton.has_key('uniqueItems')):
+                if (skeleton.has_key('uniqueItems')):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if self.{0} != None and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
