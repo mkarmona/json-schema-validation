@@ -47,7 +47,7 @@ def validate(python_raw, logger):
     if type(python_raw) is list:
         c = 0
         for currentItem in python_raw:
-            print "Entry Nb {0}\n".format(c)
+            logger.info("Entry Nb {0}".format(c))
             # debug mode
             evidenceString = cttv.EvidenceString.fromMap(currentItem)
             r = evidenceString.validate(logger)
