@@ -432,8 +432,8 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                         myMap['__validate__'] += indent*2 + "error = True\n"
                         myMap['__validate__'] += indent + "else:\n"
                         myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger)\n" 
-                        myMap['__validate__'] += indent*2 + "if " + propertyName + "_error:\n" 
-                        myMap['__validate__'] += indent*2 + "logger.error(self." + propertyName +".to_JSON())\n"
+                        #myMap['__validate__'] += indent*2 + "if " + propertyName + "_error:\n" 
+                        myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON())\n"
                         myMap['__validate__'] += indent*2 + "error = error or "+ propertyName + "_error"         
                     else:
                         myMap['__init__'] += indent + "self." + propertyName + " = None\n"
