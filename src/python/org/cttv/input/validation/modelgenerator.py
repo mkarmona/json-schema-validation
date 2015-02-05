@@ -699,7 +699,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
     if bCreateFile:
         # dump
         #classfile.write('\n'.join(myMap['classes']))
-        classfile.write('import re\nimport sys\nimport iso8601\nimport types\nimport json\nimport logging\n')
+        classfile.write('import re\nimport sys\nimport iso8601\nimport types\nimport json\nimport logging\nlogger = logging.getLogger(__name__)\n')
         for c in myMap['classes']:
             classfile.write(c)
         classfile.close()
