@@ -318,7 +318,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
             className = None
             if depth == 0 and 'version' in skeleton:
                 schemaVersion = skeleton['version']
-            if (skeleton.has_key('id')):
+            if ('id' in skeleton):
                 myMap['isAClass'] = True
                 classId = skeleton['id']
                 print textindent + classId
@@ -361,7 +361,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                             classfile.close()
                         # Finally create a file there and keep the file handler open
                         classfile = open(exportDirectory + "/" + dirpath + "/__init__.py", 'w')
-            if (skeleton.has_key('properties')):
+            if ('properties' in skeleton):
                 for attribute_key in skeleton['properties']:
                     childMap = generate_classes(exportDirectory, skeleton['properties'][attribute_key], False, attribute_key, className, depth+1)
                     myMap['attributes'][attribute_key] = childMap
@@ -400,8 +400,8 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                  If this value is not specified (or is boolean true, then additional properties can contain anything
                  now generate the python code
                 '''
-                if (skeleton.has_key('additionalProperties')):
-                    if (skeleton.has_key('required')) and skeleton['required']:
+                if ('additionalProperties' in skeleton):
+                    if ('required' in skeleton) and skeleton['required']:
                         myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = {}\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "obj." + propertyName + " = clone." + propertyName + "\n"
@@ -411,21 +411,21 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                         myMap['__clone__'] += indent*2 + "obj." + propertyName + " = clone." + propertyName + "\n"
-                        myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
+                        myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
                     myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = self." + propertyName +"\n"
-                    if skeleton.has_key('pattern'):
+                    if 'pattern' in skeleton:
                         pattern = skeleton['pattern']
                         myMap['__validate__'] = indent + "if self." + propertyName + " and not re.match('"+ pattern +"', self." + propertyName + "):\n"
                         myMap['__validate__'] += indent*2 + "logger.error(\" - "+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\")\n"
                         myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
                         #m = re.match("^urn:jsonschema:(.+)$", classId)
                 elif myMap['isAClass']:
-                    if (skeleton.has_key('required')) and skeleton['required']:
+                    if ('required' in skeleton) and skeleton['required']:
                         myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = " + className + "()\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "obj." + propertyName + " = " + className + ".cloneObject(clone." + propertyName + ")\n"
-                        myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
+                        myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
                         myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
                         myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
@@ -440,7 +440,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                         myMap['__default__'] = indent + propertyName + " = None"
                         myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                         myMap['__clone__'] += indent*2 + "obj." + propertyName + " = " + className + ".cloneObject(clone." + propertyName + ")\n"
-                        myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
+                        myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
                         myMap['__validate__'] = indent + "if self."+ propertyName +":\n"
                         myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger)\n"
@@ -498,6 +498,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 '''
                 classDefinition += baseindent + "@classmethod\n"
                 classDefinition += baseindent + "def fromMap(cls, map):\n"
+                classDefinition += baseindent*2 + "cls_keys = ['"+"',".join(list(myMap['attributes']))+"']\n"
                 classDefinition += baseindent*2 + "obj = cls()\n"
                 classDefinition += baseindent*2 + "if not isinstance(map, types.DictType):\n"
                 classDefinition += baseindent*3
@@ -506,6 +507,10 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 classDefinition += baseindent*3 + "return\n"
                 for attribute_key in myMap['attributes']:
                     classDefinition += myMap['attributes'][attribute_key]['__map__']
+                classDefinition += baseindent*2 + "for key in map:\n"
+                classDefinition += baseindent*3 + "if not key in cls_keys:\n"
+                classDefinition += baseindent*4 + "logger.error(\"{0}".format(parentName)
+                classDefinition +=" - invalid field - {0} found\".format(key))\n"
                 classDefinition += baseindent*2 + "return obj\n"
                 '''
                  5. and a validate method
@@ -571,14 +576,14 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 #'{:%Y-%m-%d %H:%M:%S}'.format, gen
                 #myMap['__init__'] += indent + '#Required: {%r}\n'.format %(skeleton['required']))
                 myMap['__init__'] += indent + ('#Required: {%r}\n' % (skeleton['required'])) + "\n"
-                myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
+                myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
                 myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
                 myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
             else:
-                myMap['__map__'] = indent + "if map.has_key('" + propertyName + "'):\n"
+                myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
             
             myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = self." + propertyName +"\n"
