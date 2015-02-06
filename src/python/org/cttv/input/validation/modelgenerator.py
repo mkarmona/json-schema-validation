@@ -384,13 +384,13 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
                     myMap['classes'].extend(childMap['classes'])
-            elif (className == 'ProbabilityScore' or className == 'PValueScore'):
-                # this is a hack since the JSON Schema is not consistent
-                for attribute_key in ['value', 'method']:
-                    childMap = generate_classes(exportDirectory, skeleton[attribute_key], False, attribute_key, className, depth+1)
-                    myMap['attributes'][attribute_key] = childMap
-                    # extends the classes definition with the one from this map
-                    myMap['classes'].extend(childMap['classes'])
+            #elif (className == 'ProbabilityScore' or className == 'PValueScore'):
+            #    # this is a hack since the JSON Schema is not consistent
+            #    for attribute_key in ['value', 'method']:
+            #        childMap = generate_classes(exportDirectory, skeleton[attribute_key], False, attribute_key, className, depth+1)
+            #        myMap['attributes'][attribute_key] = childMap
+            #        # extends the classes definition with the one from this map
+            #        myMap['classes'].extend(childMap['classes'])
             indent = "  "*2
             if propertyName:
                 myMap['__init__'] = indent + "\n" + indent + "# Name: " + propertyName + "\n"
