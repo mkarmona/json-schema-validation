@@ -498,7 +498,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 '''
                 classDefinition += baseindent + "@classmethod\n"
                 classDefinition += baseindent + "def fromMap(cls, map):\n"
-                classDefinition += baseindent*2 + "cls_keys = ['"+"',".join(list(myMap['attributes']))+"']\n"
+                classDefinition += baseindent*2 + "cls_keys = ['"+"','".join(list(myMap['attributes']))+"']\n"
                 classDefinition += baseindent*2 + "obj = cls()\n"
                 classDefinition += baseindent*2 + "if not isinstance(map, types.DictType):\n"
                 classDefinition += baseindent*3
