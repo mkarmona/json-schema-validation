@@ -417,7 +417,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     if skeleton.has_key('pattern'):
                         pattern = skeleton['pattern']
                         myMap['__validate__'] = indent + "if not re.match(\""+ pattern +"\", self." + propertyName + "):\n"
-                        myMap['__validate__'] += indent*2 + "logger.warn(\"\t'{0}' for field '"+ propertyName+"' does not match pattern '"+pattern+"'\".format(self."+propertyName+"))\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\"\t'{0}' for field '"+ propertyName+"' does not match pattern '"+pattern+"'\".format(self."+propertyName+"))\n"
                         myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
                         #m = re.match("^urn:jsonschema:(.+)$", classId)
                 elif myMap['isAClass']:
@@ -585,7 +585,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 pattern = skeleton['pattern']
                 myMap['__validate__'] = indent + "# Check regex: "+ pattern +" for validation\n"
                 myMap['__validate__'] += indent + "if not re.match(\""+ pattern +"\", self." + propertyName + "):\n"
-                myMap['__validate__'] += indent*2 + "logger.warn(\" "+parentName+" - "+propertyName+" '{0}' does not match pattern '"+pattern+"'\".format(self."+propertyName+"))\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\" "+parentName+" - "+propertyName+" '{0}' does not match pattern '"+pattern+"'\".format(self."+propertyName+"))\n"
                 myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
             '''
              VALIDATION STEP 2: check format is correct
