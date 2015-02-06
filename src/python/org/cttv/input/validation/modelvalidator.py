@@ -40,26 +40,29 @@ def main():
 
     validator = DataModelValidator()
     r = validator._validate(python_raw, logger)
-    sys.exit(r)
+    if r>0:
+        logger.error("validation failed: {0} errors found while parsing the datasource".format(r))
+        sys.exit(1)
+    else:
+        logger.info("validation passed")
+        sys.exit(0)
 
 def validate(python_raw, logger):
-    result = 0
+    nb_errors = 0
     if type(python_raw) is list:
         c = 0
         for currentItem in python_raw:
             logger.info("Entry Nb {0}".format(c))
             # debug mode
             evidenceString = cttv.EvidenceString.fromMap(currentItem)
-            r = evidenceString.validate(logger)
-            if r == False:
-                result = 1
+            nb_errors = nb_errors + evidenceString.validate(logger)
             c +=1
     elif type(python_raw) is dict:
         evidenceString = cttv.EvidenceString.fromMap(python_raw)
-        evidenceString.validate()
+        nb_errors = evidenceString.validate(logger)
     else:
         print "ERROR: impossible to parse the input stream\n"
-    return 0
+    return nb_errors
 #
 # DataModel Validator class
 #
