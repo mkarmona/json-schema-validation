@@ -531,7 +531,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 classDefinition += baseindent*2 + "Validate class {0}\n".format(className)
                 classDefinition += baseindent*2 + ":returns: number of errors found during validation\n"
                 classDefinition += baseindent*2 + "\"\"\"\n"
-                classDefinition += baseindent*2 + "logger.error(\"Validating class {0}\")\n".format(className)
+                #classDefinition += baseindent*2 + "logger.error(\"Validating class {0}\")\n".format(className)
                 classDefinition += baseindent*2 + "error = 0\n"
                 for attribute_key in myMap['attributes']:
                     if myMap['attributes'][attribute_key].has_key('__validate__'):
