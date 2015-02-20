@@ -719,7 +719,8 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     itemType = None
                     
                     if items['type'] == "string":
-                        itemType = items['type']
+                        ''' can be string or unicode'''
+                        itemType = "basestring"
                     elif items['type'] == "number":
                         itemType = "(int, long, float, complex)"
                     elif items['type'] == "object" and '$ref' in items:
