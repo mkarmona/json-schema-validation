@@ -589,7 +589,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                1. if so, the value should be assigned from the deep-copy/map constructor
                2. the validation procedure must check the field exists
             '''
-            if (skeleton.has_key('required') and skeleton['required']):
+            if ('required' in skeleton and skeleton['required']):
                 #'{:%Y-%m-%d %H:%M:%S}'.format, gen
                 #myMap['__init__'] += indent + '#Required: {%r}\n'.format %(skeleton['required']))
                 myMap['__init__'] += indent + ('Required: {%r}' % (skeleton['required'])) + "\n"
@@ -663,6 +663,7 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                 myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                 myMap['__clone__'] += indent*2 + "obj." + propertyName + " = clone." + propertyName + "\n"
                 myMap['__default__'] = propertyName + " = False"
+                
             elif dataType == 'number':
                 '''
                  A number is initialised to nought by default
@@ -761,15 +762,16 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
                         
                     if ('minItems' in items):
-                        myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) < {1}:\n".format(propertyName, items['minItems'])
+                        
+                        myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) < {1}:\n".format(propertyName, items['minItems'])
                         myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array should have at least {2} elements\")\n".format(parentName, propertyName, items['minItems'])
                         myMap['__validate__'] += indent*2 + "error = error+1\n"
                     if ('maxItems' in items):
-                        myMap['__validate__'] += indent + "if self.{0} == None or len(self.{0}) > {1}:\n".format(propertyName, items['maxItems'])
+                        myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) > {1}:\n".format(propertyName, items['maxItems'])
                         myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array should have at most {2} elements\")\n".format(parentName, propertyName, items['maxItems'])
                         myMap['__validate__'] += indent*2 + "error = error+1\n"
                     if ('uniqueItems' in items):
-                        myMap['__validate__'] += indent + "if self.{0} != None and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
+                        myMap['__validate__'] += indent + "if self.{0} and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
                         myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array have duplicated elements\")\n".format(parentName, propertyName)
                         myMap['__validate__'] += indent*2 + "error = error+1\n"
                     
