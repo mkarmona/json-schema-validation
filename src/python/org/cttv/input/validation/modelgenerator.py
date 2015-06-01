@@ -24,6 +24,7 @@ basepackagepath = "cttv/model"
 packageClassNames = {}
 packageClassDefinitions = {}
 packagePythonMapping = {}
+baseindent = "  "
 
 requirements = '''
 nose>=1.3.4
@@ -72,7 +73,7 @@ setup(
     #packages=find_packages('.'),
     #package_dir = {'': '.'},
     #namespace_packages = ["cttv", "cttv.model"],
-    packages=[ LIST_PACKAGES ],
+    packages=[ LIST_PACKAGES, "cttv.model.flatten" ],
     license="Apache2",
     classifiers=[
         "License :: Apache 2",
@@ -443,7 +444,6 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
     myMap['attributes'] = {}
     myMap['classes'] = list()
     myMap['isAClass'] = False
-    baseindent = "  "
     textindent = baseindent*depth
     
     print textindent + "--------------"
@@ -546,7 +546,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 for parentRef in skeleton['oneOf']:
                     oneOfClassProperties = get_class_properties_from_ref(parentRef['$ref'], textindent, uri = uri)
                     oneOfClasses.append(oneOfClassProperties)
-                    print textindent + "PolymorphClass:\t" + oneOfClassProperties['package']
+                    print textindent + "Polymorphic Class:\t" + oneOfClassProperties['package']
                     '''
                      The reference may come from another package. In this case, we need to import
                      the relevant package in the ini file of the current package for the current class
@@ -690,22 +690,32 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 '''
                 if ('oneOf' in skeleton):
                     validateClause = []
+                    myMap['__map__'] = ""
+                    el = ""
                     for oneOfClass in oneOfClasses:
                         validateClause.append(" isinstance(self.{0}, {1}.{2})".format(propertyName,oneOfClass['import_as'], oneOfClass['class']))
+                        '''
+                         Assign the object to the correct class
+                        '''      
+                        myMap['__map__'] += indent + el + "if not {0}.{1}.fromMap(map['{2}']) == None:\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
+                        myMap['__map__'] += indent*2 + "obj." + propertyName + " = {0}.{1}.fromMap(map['{2}'])\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
+                        el = "el"
+                    myMap['__map__'] += indent + "else:\n"
+                    myMap['__map__'] += indent*2 + "raise cttv.model.core.JSONException(\"" + propertyName + " can't be cast to any class\")\n"
                     if required:
                         #myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = {}\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
                         myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"                        
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "obj." + propertyName + " = clone." + propertyName + "\n"
-                        myMap['__map__'] = indent + "obj." + propertyName + " = map['" + propertyName + "']\n"
+                        #myMap['__map__'] = indent + "obj." + propertyName + " = map['" + propertyName + "']\n"
                         myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None:\n"
-                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         myMap['__validate__'] += indent + "elif not("+" or".join(validateClause)+"):\n"
-                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' incorrect type\")\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" incorrect type\".format(path))\n"
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         myMap['__validate__'] += indent + "else:\n"
-                        myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger)\n"
+                        myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger, path = '.'.join([path, '" + propertyName +"']))\n"
                         myMap['__validate__'] += indent*2 + "error = error + "+ propertyName + "_error\n"
                     else:
                         print textindent + "init not required oneOf {0}\n".format(propertyName)
@@ -713,14 +723,14 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                         myMap['__clone__'] += indent*2 + "obj." + propertyName + " = clone." + propertyName + "\n"
-                        myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
-                        myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"   
+                        #myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
+                        #myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"   
                         myMap['__validate__'] = indent + "if self."+ propertyName + ":\n" 
                         myMap['__validate__'] = indent*2 + "if not ("+" or".join(validateClause)+"):\n"
-                        myMap['__validate__'] += indent*3 + "logger.error(\""+parentName+" - '"+propertyName+"' incorrect type\")\n"
+                        myMap['__validate__'] += indent*3 + "logger.error(\""+parentName+" - {0}."+propertyName+" incorrect type\".format(path))\n"
                         myMap['__validate__'] += indent*3 + "error = error + 1\n"
                         myMap['__validate__'] += indent*2 + "else:\n"
-                        myMap['__validate__'] += indent*3 + propertyName + "_error = self." + propertyName +".validate(logger)\n"
+                        myMap['__validate__'] += indent*3 + propertyName + "_error = self." + propertyName +".validate(logger, path = '.'.join([path, '" + propertyName +"']))\n"
                         myMap['__validate__'] += indent*3 + "error = error + "+ propertyName + "_error\n"
                 elif myMap['isAClass'] or '$ref' in skeleton:
                     if required:
@@ -731,13 +741,13 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
                         myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
-                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         myMap['__validate__'] += indent + "elif not isinstance(self.{0}, {1}):\n".format(propertyName, className)
-                        myMap['__validate__'] += indent*2 + "logger.error(\""+className+" class instance expected for attribute - '"+propertyName+"'\")\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\""+className+" class instance expected for attribute - {0}."+propertyName+"\".format(path))\n"
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         myMap['__validate__'] += indent + "else:\n"
-                        myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger)\n"
+                        myMap['__validate__'] += indent*2 + propertyName + "_error = self." + propertyName +".validate(logger, path = '.'.join([path, '" + propertyName +"']))\n"
                         myMap['__validate__'] += indent*2 + "error = error + "+ propertyName + "_error\n"
                     else:
                         myMap['__init__'] += indent + "self." + propertyName + " = "+ propertyName + "\n"
@@ -748,10 +758,10 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
                         myMap['__validate__'] = indent + "if self."+ propertyName +":\n"
                         myMap['__validate__'] += indent*2 + "if not isinstance(self.{0}, {1}):\n".format(propertyName, className)
-                        myMap['__validate__'] += indent*3 + "logger.error(\""+className+" class instance expected for attribute - '"+propertyName+"'\")\n"
+                        myMap['__validate__'] += indent*3 + "logger.error(\""+className+" class instance expected for attribute - {0}."+propertyName+"\".format(path))\n"
                         myMap['__validate__'] += indent*3 + "error = error + 1\n"
                         myMap['__validate__'] += indent*2 + "else:\n"                        
-                        myMap['__validate__'] += indent*3 + propertyName + "_error = self." + propertyName +".validate(logger)\n"
+                        myMap['__validate__'] += indent*3 + propertyName + "_error = self." + propertyName +".validate(logger, path = '.'.join([path, '" + propertyName +"']))\n"
                         myMap['__validate__'] += indent*3 + "error = error + "+ propertyName + "_error\n"
 
                     myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = self." + propertyName +".serialize()\n"
@@ -774,10 +784,10 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                             myMap['__clone__'] = indent + "obj." + propertyName + " = clone." + propertyName + "\n"
                             myMap['__map__'] = indent + "obj." + propertyName + " = map['" + propertyName + "']\n"
                             myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
-                            myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
+                            myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                             myMap['__validate__'] += indent*2 + "error = error + 1\n"
                             myMap['__validate__'] += indent + "elif not isinstance(self.{0}, dict):\n".format(propertyName)
-                            myMap['__validate__'] += indent*2 + "logger.error(\"dictionary expected for attribute - '"+propertyName+"'\")\n"
+                            myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+"dictionary expected for attribute - {0}."+propertyName+"\".format(path))\n"
                             myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         else:
                             print textindent +  "well init this {0}\n".format(propertyName)
@@ -789,13 +799,13 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                             myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                             myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
                             myMap['__validate__'] = indent + "if self.{0} and not isinstance(self.{0}, dict):\n".format(propertyName)
-                            myMap['__validate__'] += indent*2 + "logger.error(\"dictionary expected for attribute - '"+propertyName+"'\")\n"
+                            myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+"dictionary expected for attribute - {0}."+propertyName+"\".format(path))\n"
                             myMap['__validate__'] += indent*2 + "error = error + 1\n"                            
                         myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = self." + propertyName +"\n"
                         if 'pattern' in skeleton:
                             pattern = skeleton['pattern']
                             myMap['__validate__'] = indent + "if self." + propertyName + " and not re.match('"+ pattern +"', self." + propertyName + "):\n"
-                            myMap['__validate__'] += indent*2 + "logger.error(\" - "+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\")\n"
+                            myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\".format(path))\n"
                             myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
                     elif type(additionalProperties) is bool and additionalProperties == False:
                         print textident + "TODO: No additionalProperties for this class"
@@ -948,10 +958,10 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if superClassMap:
                     classDefinition += baseindent*2 +  "obj = super({0}, cls).fromMap(map)\n".format(myMap['class'])
                 else:
-                    classDefinition += baseindent*2 + "obj = cls()\n"                    
+                    classDefinition += baseindent*2 + "obj = cls()\n"
                 classDefinition += baseindent*2 + "if not isinstance(map, types.DictType):\n"
                 classDefinition += baseindent*3
-                classDefinition += "logger.error(\"{0}".format(myMap['class'])
+                classDefinition += "logger.warn(\"{0}".format(myMap['class'])
                 classDefinition +=" - DictType expected - {0} found\\n\".format(type(map)))\n"
                 classDefinition += baseindent*3 + "return\n"
                 for attribute_key in myMap['attributes']:
@@ -959,15 +969,16 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if superClassMap:
                     classDefinition += baseindent*2 + "for key in map:\n"
                     classDefinition += baseindent*3 + "if not key in cls_keys:\n"
-                    classDefinition += baseindent*4 + "logger.error(\"{0}".format(myMap['class'])
+                    classDefinition += baseindent*4 + "logger.warn(\"{0}".format(myMap['class'])
                     classDefinition +=" - invalid field - {0} found\".format(key))\n"
+                    classDefinition += baseindent*4 + "return\n"            
                 classDefinition += baseindent*2 + "return obj\n"
                 
                 '''
                  5. and a validate method
                 '''
                 classDefinition += baseindent + "\n"
-                classDefinition += baseindent + "def validate(self, logger):\n"
+                classDefinition += baseindent + "def validate(self, logger, path = \"root\"):\n"
                 classDefinition += baseindent*2 + "\"\"\"\n"
                 classDefinition += baseindent*2 + "Validate class {0}\n".format(className)
                 classDefinition += baseindent*2 + ":returns: number of errors found during validation\n"
@@ -976,7 +987,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 classDefinition += baseindent*2 + "error = 0\n"
                 if superClassMap:
                     classDefinition += baseindent*2 + "# cumulate errors from super class\n"
-                    classDefinition += baseindent*2 +  "error = error + super({0}, self).validate(logger)\n".format(myMap['class'])
+                    classDefinition += baseindent*2 +  "error = error + super({0}, self).validate(logger, path = path)\n".format(myMap['class'])
                     '''
                      Add all required attribute from superclass
                     '''
@@ -1063,8 +1074,8 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 myMap['__init__'] += indent + ('Required: {%r}' % (required)) + "\n"
                 myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
-                myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' is required\")\n"
+                myMap['__validate__'] = indent + "if self."+ propertyName +" == None :\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
             else:
@@ -1079,7 +1090,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 pattern = skeleton['pattern']
                 myMap['__validate__'] = indent + "\"\"\" Check regex: "+ pattern +" for validation\"\"\"\n"
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not re.match('"+ pattern +"', self." + propertyName + "):\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - "+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\")\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
             '''
              VALIDATION STEP 2: check format is correct
@@ -1092,7 +1103,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     myMap['__validate__'] = ""
                 if skeleton['format'] == "email":
                     myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not re.match('[\\w.-]+@[\\w.-]+.\\w+', self." + propertyName + "):\n"
-                    myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - "+propertyName+" '{0}' is not a valid email address\".format(self."+propertyName+"))\n"
+                    myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" '{1}' is not a valid email address\".format(path, self."+propertyName+"))\n"
                     myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON)\n"
                     myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 elif skeleton['format'] == "date-time":
@@ -1106,7 +1117,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     myMap['__validate__'] += indent*2 + "try:\n"
                     myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
                     myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
-                    myMap['__validate__'] += indent*3 + "logger.error(\""+parentName+" - "+propertyName+" '{0}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\".format(self."+propertyName+"))\n"
+                    myMap['__validate__'] += indent*3 + "logger.error(\""+parentName+" - {0}."+propertyName+" '{1}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\".format(path, self."+propertyName+"))\n"
                     myMap['__validate__'] += indent*3 + "logger.error(self.to_JSON())\n"
                     myMap['__validate__'] += indent*3 + "error = error+1\n"
 
@@ -1128,7 +1139,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 else:
                     enumArray = ",".join(skeleton['enum'])
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not self." + propertyName + " in [" + enumArray + "]:\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' value is restricted to the fixed set of values " + enumArray + "\")\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" value is restricted to the fixed set of values " + enumArray + "\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
             #if '$ref' in skeleton:
@@ -1174,7 +1185,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if not myMap.has_key('__validate__'):
                     myMap['__validate__'] = ""
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not isinstance(self." + propertyName + ", basestring):\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' type should be a string\")\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" type should be a string\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"    
                 
                 
@@ -1189,7 +1200,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if not myMap.has_key('__validate__'):
                     myMap['__validate__'] = ""
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not type(self." + propertyName + ") is bool:\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - '"+propertyName+"' type should be a boolean\")\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" type should be a boolean\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
             elif dataType == 'number':
@@ -1221,7 +1232,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if {0}:\n".format(" or ".join(constraint))
-                    myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}': {2} {3}\".format(self.{1}))\n".format(parentName, propertyName, "{0}", " and ".join(message))
+                    myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}.{1}: {2} {3}\".format(path, self.{1}))\n".format("{0}", propertyName, "{1}", " and ".join(message))
                     myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON())\n"
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
                     
@@ -1233,7 +1244,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 myMap['__default__'] = propertyName + " = None"
                 myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                 myMap['__clone__'] += indent*2 + "obj." + propertyName + " = []; obj." + propertyName +".extend(clone." + propertyName + ")\n"
-                
+              
                 print "KEYS:{0}\n".format( ",".join(skeleton.keys()))
                 
                 if 'items' in skeleton:
@@ -1252,28 +1263,36 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         itemType = "basestring"
                     elif items['type'] == "number":
                         itemType = "(int, long, float, complex)"
-                    elif items['type'] == "object" and '$ref' in items:
-                        '''
-                         is it a local or remote reference to an existing class?
-                        '''
-                        print textindent + "ITEM REF: {0}\n".format(items['$ref'])
-                        referencedClassProperties = get_class_properties_from_ref(items['$ref'], textindent, uri = uri)
-                        if package == referencedClassProperties['package']:
-                            itemType = referencedClassProperties['class']
-                        else:
-                            importStatement = referencedClassProperties['package'] + " as " + referencedClassProperties['import_as']
-                            if not (importStatement in packageClassDefinitions[package]['imports']):
-                                packageClassDefinitions[package]['imports'].append(importStatement)                        
-                            itemType = referencedClassProperties['import_as'] + "." + referencedClassProperties['class']
-                        #itemType = classProperties['class']
+                    elif items['type'] == "object":
+                
+                        if '$ref' in items:
+                            '''
+                             is it a local or remote reference to an existing class?
+                            '''
+                            print textindent + "ITEM REF: {0}\n".format(items['$ref'])
+                            referencedClassProperties = get_class_properties_from_ref(items['$ref'], textindent, uri = uri)
+                            if package == referencedClassProperties['package']:
+                                itemType = referencedClassProperties['class']
+                            else:
+                                importStatement = referencedClassProperties['package'] + " as " + referencedClassProperties['import_as']
+                                if not (importStatement in packageClassDefinitions[package]['imports']):
+                                    packageClassDefinitions[package]['imports'].append(importStatement)                        
+                                itemType = referencedClassProperties['import_as'] + "." + referencedClassProperties['class']
+                            #itemType = classProperties['class']
 
-                    elif items['type'] == "object" and 'id' in items:
-                        print "Creating type for child of property " + propertyName + "\n"
-                        sys.exit(1)
-                        childMap = generate_classes(skeleton['items'], package=package, depth=depth+1)
-                        if childMap['isAClass']:
-                            itemType = childMap['class']
-                        myMap['classes'].extend(childMap['classes'])                     
+                        elif 'id' in items:
+                            print "Creating type for child of property " + propertyName + "\n"
+                            sys.exit(1)
+                            childMap = generate_classes(skeleton['items'], package=package, depth=depth+1)
+                            if childMap['isAClass']:
+                                itemType = childMap['class']
+                            myMap['classes'].extend(childMap['classes'])
+                        
+                        myMap['__map__'] = indent + "if '" + propertyName + "' in map and isinstance(map['" + propertyName + "'], list):\n"
+                        myMap['__map__'] += indent*2 + "obj." + propertyName + " = []\n"
+                        myMap['__map__'] += indent*2 + "for item in map['" + propertyName + "']:\n"
+                        myMap['__map__'] += indent*3 + "obj." + propertyName + ".append("+itemType+".fromMap(item))\n"
+  
                     #myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
                 
@@ -1290,21 +1309,21 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     The empty array is always valid but the items should be of the specified type
                     '''
                     myMap['__validate__'] += indent + "if not self.{0} == None and len(self.{0}) > 0 and not all(isinstance(n, {1}) for n in self.{0}):\n".format(propertyName, itemType)
-                    myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array should have elements of type '{2}'\")\n".format(parentName, propertyName, itemType)
+                    myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have elements of type '{2}'\".format(path))\n".format(parentName, propertyName, itemType, "{0}")
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
                         
                     if ('minItems' in items):
                         
                         myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) < {1}:\n".format(propertyName, items['minItems'])
-                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array should have at least {2} elements\")\n".format(parentName, propertyName, items['minItems'])
+                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have at least {2} elements\".format(path))\n".format(parentName, propertyName, items['minItems'], "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                     if ('maxItems' in items):
                         myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) > {1}:\n".format(propertyName, items['maxItems'])
-                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array should have at most {2} elements\")\n".format(parentName, propertyName, items['maxItems'])
+                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have at most {2} elements\".format(path))\n".format(parentName, propertyName, items['maxItems'], "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                     if ('uniqueItems' in items):
                         myMap['__validate__'] += indent + "if self.{0} and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
-                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - '{1}' array have duplicated elements\")\n".format(parentName, propertyName)
+                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {2}.{1} array have duplicated elements\".format(path))\n".format(parentName, propertyName, "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                     
                 
@@ -1394,6 +1413,11 @@ def write_package_files(exportDirectory, dirpath, isAModule=False):
     initFile.write("logger = logging.getLogger(__name__)\n")
         
     print "export following classes: " + ",".join(packageClassDefinitions[package]['classes'])
+    
+    if package == "cttv.model.core":
+        initFile.write("\nclass JSONException(Exception):\n")
+        initFile.write(baseindent + "pass\n\n")
+        
     for className in packageClassDefinitions[package]['classes']:
         print "export class " + className
         #classFileHandler = open(exportDirectory + "/" + dirpath + "/" + className+ ".py", 'w')
