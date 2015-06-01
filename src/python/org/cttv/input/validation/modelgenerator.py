@@ -305,14 +305,16 @@ def generate_classes(exportDirectory, skeleton, bCreateFile, propertyName=None, 
     if propertyName:
         print textindent + propertyName
     print textindent + ','.join(skeleton.keys())
+    dataType = None
     if (type(skeleton) is dict):
-        if (type(skeleton['type']) is list):
-            print textindent + "DataType: %s" %(','.join(skeleton['type']))
-            # horrible hack
-            dataType = skeleton['type'][0]
-        else:
-            dataType = skeleton['type']
-            print textindent + "DataType: %s" %(dataType)
+        if ('type' in skeleton):
+            if type(skeleton['type']) is list:
+                print textindent + "DataType: %s" %(','.join(skeleton['type']))
+                # horrible hack
+                dataType = skeleton['type'][0]
+            else:
+                dataType = skeleton['type']
+                print textindent + "DataType: %s" %(dataType)
             
         if dataType == 'object':
             className = None
@@ -807,7 +809,8 @@ def main():
 
     parser = optparse.OptionParser()
     parser.add_option('-d', '--directory', default='../../../../../../build', dest='exportDirectory')
-    parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/CTTV/input_data_format/master/json_schema/evidence_string_schema.json', dest='json_schema_uri')
+    parser.add_option('-u', '--uri', default='file:///home/gk680303/windows/gitlab/json-schema-validation/schema/evidence_string_schema.json', dest='json_schema_uri')
+    #parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/CTTV/input_data_format/master/json_schema/evidence_string_schema.json', dest='json_schema_uri')
 
     options, args = parser.parse_args()
 
