@@ -73,7 +73,7 @@ setup(
     #packages=find_packages('.'),
     #package_dir = {'': '.'},
     #namespace_packages = ["cttv", "cttv.model"],
-    packages=[ LIST_PACKAGES, "cttv.model.flatten" ],
+    packages=[ LIST_PACKAGES ],
     license="Apache2",
     classifiers=[
         "License :: Apache 2",
@@ -1292,6 +1292,8 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = []\n"
                         myMap['__map__'] += indent*2 + "for item in map['" + propertyName + "']:\n"
                         myMap['__map__'] += indent*3 + "obj." + propertyName + ".append("+itemType+".fromMap(item))\n"
+                        
+                        myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = map(lambda x: x.serialize(), self." + propertyName +")\n"
   
                     #myMap['attributes'][attribute_key] = childMap
                     # extends the classes definition with the one from this map
