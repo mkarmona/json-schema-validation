@@ -1,11 +1,24 @@
-﻿"""
-.. module:: useful_1
-   :platform: Unix, Windows
-   :synopsis: This script generates the CTTV package for JSON Schema validation
+﻿'''
+Copyright 2014-2015 EMBL - European Bioinformatics Institute, Wellcome
+Trust Sanger Institute and GlaxoSmithKline
 
-.. moduleauthor:: Gautier Koscielny <gautier.x.koscielny@gsk.com>
+This software was developed as part of the Centre for Therapeutic
+Target Validation (CTTV)  project. For more information please see:
 
-"""
+        http://targetvalidation.org
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
 
 from urllib2 import *
 from pprint import pprint
@@ -19,6 +32,15 @@ import optparse
 import shutil
 import ConfigParser
 import io
+
+__author__ = "Gautier Koscielny"
+__copyright__ = "Copyright 2014-2015, The Centre for Therapeutic Target Validation (CTTV)"
+__credits__ = ["Gautier Koscielny", "Samiul Hasan"]
+__license__ = "Apache 2.0"
+__version__ = "1.2.1"
+__maintainer__ = "Gautier Koscielny"
+__email__ = "gautierk@targetvalidation.org"
+__status__ = "Production"
 
 basepackagepath = "cttv/model"
 packageClassNames = {}
@@ -63,8 +85,8 @@ except ImportError:
 long_description = open(os.path.join(os.path.dirname(__file__), "README.rst")).read()
 
 setup(
-    name="cttv.model",
-    version="1.2",
+    name="cttvmodel",
+    version="1.2.1",
     description=long_description.split("\\n")[0],
     long_description=long_description,
     author="Gautier Koscielny",
@@ -86,6 +108,12 @@ setup(
 
 readme = '''
 Simple module to validate, compare and generate CTTV evidence strings
+
+Installation using python's pip installer:
+
+- (As root) pip install git+https://github.com/CTTV/cttvmodel.git
+- (Install to a custom folder called 'cttvmodel') pip install -t cttvmodel git+https://github.com/CTTV/cttvmodel.git
+- (Install a specific version of the code in a specific folder, here 1.2.1) pip install -t cttvmodel-1.2.1 git+https://github.com/CTTV/cttvmodel.git@1.2.1
 
 '''
 
@@ -321,45 +349,61 @@ __author__ = "Gautier Koscielny"
 __copyright__ = "Copyright 2014-2015, The Centre for Therapeutic Target Validation (CTTV)"
 __credits__ = ["Gautier Koscielny", "Samiul Hasan"]
 __license__ = "Apache 2.0"
-__version__ = "1.2"
+__version__ = "1.2.1"
 __maintainer__ = "Gautier Koscielny"
 __email__ = "gautierk@targetvalidation.org"
 __status__ = "Production"
 '''
 
-def get_class_properties_from_ref(ref, textindent, innerClass = None, uri = None):
+def get_class_properties_from_ref(ref, textindent, innerClass = None, uri = None, proxy = None):
     '''
-     urn:jsonschema:cttv:input:model:EvidenceProperties
-     https://github.com/CTTV/json_schema/blob/master/src/base.json
-     => 
+    Given a URI reference or a local reference to a JSON Schema class, 
+    this method will get all the class properties of the specified reference
+    classes and packages information are stored in the 'packageClassNames' dictionary
     '''
     classProperties = {}
     print textindent + "Find class for reference " + ref
     
+    '''
+    A reference as a local reference. This happens inside a JSON Schema file usually
+    where the scope of the reference is local.
+    In this case, we will append the URI given as an argument
+    '''
     local_match = re.match("^#/(.+)$", ref)
     if local_match:
         print textindent + "Correct and point to full URI " + ref
         ref = uri + ref
         
-    
+    '''
+    A reference to a global class defined inside or outside the same package
+    '''
     #https://raw.githubusercontent.com/CTTV/json_schema/master/src/evidence/base.json#base_evidence/properties/association_score
     uri_match = re.match("^https://raw\.githubusercontent\.com/CTTV/json_schema/master/src/(.+)\.json#*(.*)$", ref)
-    json_match = re.match("^(https://raw\.githubusercontent\.com/CTTV/json_schema/master/src/.+\.json).*$", ref)
-    #local_match = re.match("^#/(.+)$", ref)
     
     '''
-     if we found a package from github
+    The URI of the corresponding package
+    '''
+    json_match = re.match("^(https://raw\.githubusercontent\.com/CTTV/json_schema/master/src/.+\.json).*$", ref)
+    
+    '''
+     if we found a a URI reference
     '''
     if uri_match:
         '''
          if this class was never recorded
+         in packageClassNames
         '''
         if not ref in packageClassNames:
             print textindent + ";".join(uri_match.groups())
             uriclasspath = uri_match.groups()[0]
             # get python package for this json file
             jsonFile = json_match.groups()[0]
-            data = urlopen( jsonFile ).read()
+            if proxy:
+                proxy_handler = ProxyHandler({"http": proxy, "https": proxy})
+                opener = build_opener(proxy_handler)
+                data = opener.open( jsonFile ).read()
+            else:          
+                data = urlopen( jsonFile ).read()
             jsonclass = json.loads(data)
             className = None
             raw = None
@@ -406,7 +450,7 @@ def get_class_properties_from_ref(ref, textindent, innerClass = None, uri = None
             classProperties = packageClassNames[ref]
             print textindent + "IsClass: " + classProperties['class']
             print textindent + "IsPackage: " + classProperties['package']
-            print textindent + "IsImportedAs: " + classProperties['import_as'] 
+            print textindent + "IsImportedAs: " + classProperties['import_as']
             
 #    elif local_match:
 #        localref = local_match.groups()[0]
@@ -431,7 +475,7 @@ def get_class_properties_from_ref(ref, textindent, innerClass = None, uri = None
 
     return classProperties
     
-def generate_classes(skeleton, propertyName=None, parentName=None, package=None, required=False, uri=None, depth=0):
+def generate_classes(skeleton, propertyName=None, parentName=None, package=None, required=False, uri=None, depth=0, proxy=None):
     '''
      This method generates all the python classes representing evidence string concepts
      as defined in the JSON Schema definition.
@@ -440,10 +484,21 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
      specific pattern rule (identifiers, etc.)
     '''
     schemaVersion = None
+    
+    '''
+    Initialise the map that will contain all the attributes of the data structure.
+    The JSON data structure is not always transformed into a class. Hence the 
+    isAClass flag set to False by default.
+    '''
     myMap = {}
     myMap['attributes'] = {}
     myMap['classes'] = list()
     myMap['isAClass'] = False
+    
+    '''
+    The indentation is related to the depth of the definition
+    It's purely for logging purpose and making it easier to debug 
+    '''
     textindent = baseindent*depth
     
     print textindent + "--------------"
@@ -454,6 +509,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
             print textindent + "propertyName:\t" + propertyName
 
     print textindent + 'Keys:\t\t' + ','.join(skeleton.keys())
+    
     referencedSchema = None
     referencedClassProperties = None
     '''
@@ -476,19 +532,30 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
             dataType = 'object' # $ref
             generateClassDefinition = False
             referencedSchema = skeleton['$ref']
-            referencedClassProperties = get_class_properties_from_ref(referencedSchema, textindent, uri = uri)
+            referencedClassProperties = get_class_properties_from_ref(referencedSchema, textindent, uri = uri, proxy = proxy)
             if package == referencedClassProperties['package']:
                 className = referencedClassProperties['class']
             else:
                 className = referencedClassProperties['import_as'] + "." + referencedClassProperties['class']
 
         elif 'allOf' in skeleton:
+            '''
+            This is the case where a JSON definition inherits 
+            from one or several definition.
+            Usually, the type is an object and we generate 
+            a class definition for this entity
+            '''
             dataType = skeleton['type']
             generateClassDefinition = True
             print textindent + "DataType: %s" %(dataType)
+            ''' 
+            here, we assume inheritance of only one class and
+            we extract the parent definition reference and store
+            its symbols in the global class dictionary 
+            '''
             parentURI = skeleton['allOf'][0]
             referencedSchema = parentURI['$ref']
-            referencedClassProperties = get_class_properties_from_ref(referencedSchema, textindent, uri = uri)
+            referencedClassProperties = get_class_properties_from_ref(referencedSchema, textindent, uri = uri, proxy = proxy)
                 
         elif 'type' in skeleton:
             if type(skeleton['type']) is list:
@@ -527,11 +594,13 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
             if 'allOf' in skeleton:
                 '''
                  it's an extension of another schema definition
-                 we have to assume it's always the first item
+                 we assume it's always the first item
+                 but in the future, we may have to aggregate several
+                 parent definitions.
                 '''
                 generateClassDefinition = True
                 parentURI = skeleton['allOf'][0]
-                parentClassProperties = get_class_properties_from_ref(parentURI['$ref'], textindent, uri = uri)
+                parentClassProperties = get_class_properties_from_ref(parentURI['$ref'], textindent, uri = uri, proxy = proxy)
                 superClasses.append(parentClassProperties)
                 print textindent + "SuperClass:\t" + parentClassProperties['package']
 
@@ -544,7 +613,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 #superClasses.append('object')
                 generateClassDefinition = False
                 for parentRef in skeleton['oneOf']:
-                    oneOfClassProperties = get_class_properties_from_ref(parentRef['$ref'], textindent, uri = uri)
+                    oneOfClassProperties = get_class_properties_from_ref(parentRef['$ref'], textindent, uri = uri, proxy = proxy)
                     oneOfClasses.append(oneOfClassProperties)
                     print textindent + "Polymorphic Class:\t" + oneOfClassProperties['package']
                     '''
@@ -562,6 +631,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                  inner class
                 '''
                 generateClassDefinition = True
+                
             elif 'additionalProperties' in skeleton:
                 print("additionalProperties for attribute %s" %(propertyName))
             else:
@@ -572,7 +642,6 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
              We create a fully fledged class
             '''
             if generateClassDefinition == True:
-            #if depth == 0 and uri:
                 if 'version' in skeleton:
                     schemaVersion = skeleton['version']
                 '''
@@ -585,10 +654,10 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 '''
                 classProperties = None
                 if depth == 0:
-                    classProperties = get_class_properties_from_ref(uri, textindent, uri = uri)
+                    classProperties = get_class_properties_from_ref(uri, textindent, uri = uri, proxy = proxy)
                     classId = uri
                 else:
-                    classProperties = get_class_properties_from_ref(uri + "#" + propertyName, textindent, innerClass = propertyName, uri = uri)
+                    classProperties = get_class_properties_from_ref(uri + "#" + propertyName, textindent, innerClass = propertyName, uri = uri, proxy = proxy)
                     classId = uri + " inner class:("+propertyName+")"
                 
                 print textindent + "URI:\t" + uri
@@ -622,16 +691,16 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if 'definitions' in skeleton:
                     print textindent + "Parse extra definitions at depth {0}".format(depth)
                     for definition_key in skeleton['definitions']:
-                        definitionMap = generate_classes(skeleton['definitions'][definition_key], parentName=definition_key, package=package, depth=depth, uri=uri + skeleton['id'] + "/definitions/" + definition_key)
+                        definitionMap = generate_classes(skeleton['definitions'][definition_key], parentName=definition_key, package=package, depth=depth, uri=uri + skeleton['id'] + "/definitions/" + definition_key, proxy=proxy)
                 
             '''
              If the object contains properties, parse each of the properties and 
              create classes as necessary. 
-             If a class inherits from another cttv class, we have to make sure
+             If a class inherits from another JSON class, we have to make sure
              we will init the properties properly. 
              We don't have to parse them at this point, but when we generate 
              the class definition, we have to add them in the constructors 
-             and call the superclass for validation, cloning or validation
+             and call the superclass for initialisation, cloning or validation
             '''
             classAttributes = {}
 
@@ -647,7 +716,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 classAttributes = skeleton['properties']
             
             '''
-             Check the one that are required
+             Record what are the required attributes
             '''
             requiredArray = []
             if 'required' in skeleton:
@@ -664,7 +733,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                  don't parse the type of the class either
                 '''
                 if not attribute_key in ['import_remote_schemas', 'allOf']:
-                    childMap = generate_classes(classAttributes[attribute_key], propertyName=attribute_key, parentName=pName, package=package, required=(attribute_key in requiredArray), depth=depth+1, uri=uri)
+                    childMap = generate_classes(classAttributes[attribute_key], propertyName=attribute_key, parentName=pName, package=package, required=(attribute_key in requiredArray), depth=depth+1, uri=uri, proxy=proxy )
                     myMap['attributes'][attribute_key] = childMap
                     '''
                      extends the classes definition with the one from this map
@@ -690,18 +759,20 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 '''
                 if ('oneOf' in skeleton):
                     validateClause = []
-                    myMap['__map__'] = ""
+                    myMap['__map__'] = indent + "if '{0}' in map:\n".format(propertyName)
                     el = ""
+
                     for oneOfClass in oneOfClasses:
                         validateClause.append(" isinstance(self.{0}, {1}.{2})".format(propertyName,oneOfClass['import_as'], oneOfClass['class']))
                         '''
                          Assign the object to the correct class
-                        '''      
-                        myMap['__map__'] += indent + el + "if not {0}.{1}.fromMap(map['{2}']) == None:\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
-                        myMap['__map__'] += indent*2 + "obj." + propertyName + " = {0}.{1}.fromMap(map['{2}'])\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
+                        '''
+                        myMap['__map__'] += indent*2 + el + "if not {0}.{1}.fromMap(map['{2}']) == None:\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
+                        myMap['__map__'] += indent*3 + "obj." + propertyName + " = {0}.{1}.fromMap(map['{2}'])\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
                         el = "el"
-                    myMap['__map__'] += indent + "else:\n"
-                    myMap['__map__'] += indent*2 + "raise cttv.model.core.JSONException(\"" + propertyName + " can't be cast to any class\")\n"
+                    
+                    myMap['__map__'] += indent*2 + "else:\n"
+                    myMap['__map__'] += indent*3 + "raise cttv.model.core.JSONException(\"" + propertyName + " can't be cast to any class\")\n"
                     if required:
                         #myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = {}\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
                         myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"                        
@@ -732,6 +803,10 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__validate__'] += indent*2 + "else:\n"
                         myMap['__validate__'] += indent*3 + propertyName + "_error = self." + propertyName +".validate(logger, path = '.'.join([path, '" + propertyName +"']))\n"
                         myMap['__validate__'] += indent*3 + "error = error + "+ propertyName + "_error\n"
+                        
+                    # don't forget to serialize
+                    myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = self." + propertyName +".serialize()\n"
+                    
                 elif myMap['isAClass'] or '$ref' in skeleton:
                     if required:
                         #myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = " + className + "()\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
@@ -802,10 +877,11 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                             myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+"dictionary expected for attribute - {0}."+propertyName+"\".format(path))\n"
                             myMap['__validate__'] += indent*2 + "error = error + 1\n"                            
                         myMap['__serialize__'] = indent + "if not self." + propertyName +" is None: classDict['"+propertyName+"'] = self." + propertyName +"\n"
+                        
                         if 'pattern' in skeleton:
                             pattern = skeleton['pattern']
-                            myMap['__validate__'] = indent + "if self." + propertyName + " and not re.match('"+ pattern +"', self." + propertyName + "):\n"
-                            myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\".format(path))\n"
+                            myMap['__validate__'] += indent + "if self." + propertyName + " and not re.match('"+ pattern +"', self." + propertyName + "):\n"
+                            myMap['__validate__'] += indent*2 + "logger.error(\"" + parentName + " - {0}."+propertyName+" '{1}'\".format(path,self." + propertyName + ") + \" does not match pattern '"+pattern+"'\")\n"
                             myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
                     elif type(additionalProperties) is bool and additionalProperties == False:
                         print textident + "TODO: No additionalProperties for this class"
@@ -881,9 +957,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     else:
                         print textindent + "Superclass attribute " + attribute_key
                 myMap['arrayDefaultValues'] = arrayDefaultValues
-                
-
-                    
+                   
                 '''
                  2. and another constructor again but with all attributes as arguments
                     with default values. If an attribute is defined twice, we need
@@ -994,8 +1068,9 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     for attribute_key in superClassMap['attributes']:
                         if attribute_key in requiredArray:
                             classDefinition += baseindent*2 + "if self." + attribute_key + " == None:\n"
-                            classDefinition += baseindent*3 + "logger.error(\""+className+" - '"+attribute_key+"' is required\")\n"
+                            classDefinition += baseindent*3 + "logger.error(\""+className+" - {0}."+attribute_key+" is required\".format(path))\n"
                             classDefinition += baseindent*3 + "error = error + 1\n"
+                            
                 for attribute_key in myMap['attributes']:
                     if '__validate__' in myMap['attributes'][attribute_key]:
                         classDefinition += myMap['attributes'][attribute_key]['__validate__']
@@ -1074,7 +1149,8 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 myMap['__init__'] += indent + ('Required: {%r}' % (required)) + "\n"
                 myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
-                myMap['__validate__'] = indent + "if self."+ propertyName +" == None :\n"
+                myMap['__validate__'] = indent + "# "+ propertyName +" is mandatory\n"
+                myMap['__validate__'] += indent + "if self."+ propertyName +" == None :\n"
                 myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
@@ -1088,9 +1164,12 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
             '''
             if 'pattern' in skeleton:
                 pattern = skeleton['pattern']
-                myMap['__validate__'] = indent + "\"\"\" Check regex: "+ pattern +" for validation\"\"\"\n"
+                print "PATTERN {0} found for {1} {2}".format(skeleton['pattern'], parentName, propertyName)
+                if not '__validate__' in myMap:
+                    myMap['__validate__'] = ""
+                myMap['__validate__'] += indent + "\"\"\" Check regex: "+ pattern +" for validation\"\"\"\n"
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not re.match('"+ pattern +"', self." + propertyName + "):\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" '\"+self."+propertyName+"+\"' does not match pattern '"+pattern+"'\".format(path))\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\"" + parentName + " - {0}." + propertyName + " '{1}'\".format(path,self." + propertyName + ") + \" does not match pattern '"+pattern+"'\")\n"
                 myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)
             '''
              VALIDATION STEP 2: check format is correct
@@ -1118,7 +1197,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
                     myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
                     myMap['__validate__'] += indent*3 + "logger.error(\""+parentName+" - {0}."+propertyName+" '{1}' invalid ISO 8601 date (YYYY-MM-DDThh:mm:ss.sTZD expected)\".format(path, self."+propertyName+"))\n"
-                    myMap['__validate__'] += indent*3 + "logger.error(self.to_JSON())\n"
+                    #myMap['__validate__'] += indent*3 + "logger.error(self.to_JSON())\n"
                     myMap['__validate__'] += indent*3 + "error = error+1\n"
 
                     '''
@@ -1139,7 +1218,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 else:
                     enumArray = ",".join(skeleton['enum'])
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not self." + propertyName + " in [" + enumArray + "]:\n"
-                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" value is restricted to the fixed set of values " + enumArray + "\".format(path))\n"
+                myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" value is restricted to the fixed set of values " + enumArray + " ('{1}' given)\".format(path, self."+propertyName+"))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
             #if '$ref' in skeleton:
@@ -1182,7 +1261,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 myMap['__clone__'] += indent*2 + "obj." + propertyName + " = clone." + propertyName + "\n"
                 myMap['__default__'] = propertyName + " = None"
                 # Check type
-                if not myMap.has_key('__validate__'):
+                if not '__validate__' in myMap:
                     myMap['__validate__'] = ""
                 myMap['__validate__'] += indent + "if self." + propertyName + " and not isinstance(self." + propertyName + ", basestring):\n"
                 myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" type should be a string\".format(path))\n"
@@ -1233,14 +1312,16 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__validate__'] = ""
                     myMap['__validate__'] += indent + "if {0}:\n".format(" or ".join(constraint))
                     myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}.{1}: {2} {3}\".format(path, self.{1}))\n".format("{0}", propertyName, "{1}", " and ".join(message))
-                    myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON())\n"
+                    #myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON())\n"
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
                     
             elif dataType == 'array':
                 '''
-                 An array is created empty by default
+                 An array is set to None by default
+                 if it's required, it will be assigned. If not this will stay empty
                 '''
-                myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = []\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
+                #myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = []\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
+                myMap['__init__'] += indent + "self." + propertyName + " = "+ propertyName + "\n"
                 myMap['__default__'] = propertyName + " = None"
                 myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                 myMap['__clone__'] += indent*2 + "obj." + propertyName + " = []; obj." + propertyName +".extend(clone." + propertyName + ")\n"
@@ -1254,6 +1335,8 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     Items of an array can contain definition of objects
                     So, for every attribute within this array, we have to 
                     create a class if it's not a primitive type
+                    if it's a primitive type, the same rules should apply to every element 
+                    of the array
                     '''
                     
                     itemType = None
@@ -1270,7 +1353,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                              is it a local or remote reference to an existing class?
                             '''
                             print textindent + "ITEM REF: {0}\n".format(items['$ref'])
-                            referencedClassProperties = get_class_properties_from_ref(items['$ref'], textindent, uri = uri)
+                            referencedClassProperties = get_class_properties_from_ref(items['$ref'], textindent, uri = uri, proxy = proxy)
                             if package == referencedClassProperties['package']:
                                 itemType = referencedClassProperties['class']
                             else:
@@ -1283,11 +1366,14 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         elif 'id' in items:
                             print "Creating type for child of property " + propertyName + "\n"
                             sys.exit(1)
-                            childMap = generate_classes(skeleton['items'], package=package, depth=depth+1)
+                        else:
+                            print "Anonymous class definition: Creating type for child of " + propertyName + "\n"
+                            # This has to be better 
+                            childMap = generate_classes(skeleton['items'], propertyName="_" + propertyName + "_item", package=package, depth=depth+1, uri=uri, proxy=proxy)
                             if childMap['isAClass']:
                                 itemType = childMap['class']
                             myMap['classes'].extend(childMap['classes'])
-                        
+                            
                         myMap['__map__'] = indent + "if '" + propertyName + "' in map and isinstance(map['" + propertyName + "'], list):\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = []\n"
                         myMap['__map__'] += indent*2 + "for item in map['" + propertyName + "']:\n"
@@ -1328,7 +1414,13 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {2}.{1} array have duplicated elements\".format(path))\n".format(parentName, propertyName, "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                     
-                
+                    if ('pattern' in items):
+                        pattern = items['pattern']
+                        print "PATTERN {0} found for {1} {2}".format(items['pattern'], parentName, propertyName)
+                        myMap['__validate__'] += indent + "\"\"\" Check regex: "+ pattern +" for validation of array item\"\"\"\n"
+                        myMap['__validate__'] += indent + "if self." + propertyName + " and len(self." + propertyName + ") > 0 and not all(re.match('"+ pattern +"', n) for n in self." + propertyName + "):\n"
+                        myMap['__validate__'] += indent*2 + "logger.error(\"" + parentName + " - {0}." + propertyName + " items\".format(path) + \" do not match pattern '"+pattern+"'\")\n"
+                        #myMap['__validate__'] += indent*2 + "logger.warn(json.dumps(self.{0}, sort_keys=True, indent=2))\n".format(propertyName)                
     else:
         '''
          This data type is unknown
@@ -1453,6 +1545,7 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('-d', '--directory', default='../../../../../../build', dest='exportDirectory')
     parser.add_option('-c', '--config', default='../../../../../../schema/json-1.2.ini', dest='json_schema_ini_file')
+    parser.add_option('-p', '--proxy', dest='proxy')
     #parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/CTTV/json_schema/master/src/base.json', dest='json_schema_uri')
 
     options, args = parser.parse_args()
@@ -1522,9 +1615,17 @@ def main():
             uri = config.get(package, jsonclass)
             print("parsing class %s with URI %s" % (jsonclass, uri))
             # read directly from the URL in the dependencies dictionary
-            data = urlopen( uri ).read()
+            # check proxy settings
+            data = None
+            if options.proxy:
+                proxy_handler = ProxyHandler({"http": options.proxy, "https": options.proxy})
+                opener = build_opener(proxy_handler)
+                data = opener.open(uri).read()
+            else:
+                data = urlopen( uri ).read()
+            #data = r'{0}'.format(data)
             decoded = json.loads(data)
-            generator._generate_classes(decoded, package=pythonPackage, uri=uri)
+            generator._generate_classes(decoded, package=pythonPackage, uri=uri, proxy=options.proxy)
             
         '''
          finally, write the class definitions in the correct order
@@ -1538,7 +1639,7 @@ def main():
     generator._generate_file(options.exportDirectory, tox, "tox.ini")
     generator._generate_file(options.exportDirectory, requirements, "requirements.txt")
     generator._generate_file(options.exportDirectory, manifest, "MANIFEST.in")
-    shutil.copy2(testDirectory +'/test_org_cttv_input_model.py', options.exportDirectory + "/cttv/model/test_cttv_model.py")
+    shutil.copy2(testDirectory +'/test_cttv_model.py', options.exportDirectory + "/cttv/model/test_cttv_model.py")
     print 'The package has been generated in ', options.exportDirectory
     # exit here
     sys.exit()
