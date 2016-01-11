@@ -24,6 +24,7 @@ from __future__ import absolute_import, print_function
 from nose.tools.nontrivial import with_setup
 import sys
 import logging
+logging.basicConfig()
 logger = logging.getLogger(__name__)
 import datetime
 import cttv.model.core as cttv
@@ -148,7 +149,7 @@ def test_animal_models_create_and_clone():
     obj.type = 'animal_model'
     obj.sourceID = 'phenodigm'
     obj.target = bioentity.Target(
-        id ='http://www.identifier.org/ensembl/ENSG00000105810', 
+        id = ["http://www.identifier.org/ensembl/ENSG00000105810"], 
         target_type="http://identifiers.org/cttv.target/gene_evidence", 
         activity="http://identifiers.org/cttv.activity/predicted_damaging"
         )
@@ -172,7 +173,7 @@ def test_animal_models_create_and_clone():
         species = "mouse"
         ) 
     obj.evidence.biological_model = evidence_phenotype.Biological_Model(
-        evidence_codes = ["http://identifiers.org/eco/ECO:0000057"],
+        evidence_codes = ["http://identifiers.org/eco/ECO:0000179"],
         provenance_type= evidence_core.BaseProvenance_Type(database=evidence_core.BaseDatabase(id="MGI", version="2015")),
         resource_score= evidence_score.Pvalue(type="pvalue", method= evidence_score.Method(description =""), value=0),
         date_asserted= now.isoformat(),
@@ -300,5 +301,6 @@ def test_literature_mining_create_and_clone():
     obj.evidence.evidence_codes.append("http://purl.obolibrary.org/obo/ECO_0000213")
     
     errors = obj.validate(logger)
+    logger.info(errors)
     assert not obj == None and errors == 0
 
