@@ -767,7 +767,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         '''
                          Assign the object to the correct class
                         '''
-                        myMap['__map__'] += indent*2 + el + "if not {0}.{1}.fromMap(map['{2}']) == None:\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
+                        myMap['__map__'] += indent*2 + el + "if not {0}.{1}.fromMap(map['{2}']) is None:\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
                         myMap['__map__'] += indent*3 + "obj." + propertyName + " = {0}.{1}.fromMap(map['{2}'])\n".format(oneOfClass['import_as'], oneOfClass['class'], propertyName)
                         el = "el"
                     
@@ -779,7 +779,8 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__default__'] = propertyName + " = None"
                         myMap['__clone__'] = indent + "obj." + propertyName + " = clone." + propertyName + "\n"
                         #myMap['__map__'] = indent + "obj." + propertyName + " = map['" + propertyName + "']\n"
-                        myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None:\n"
+                        # x is not None
+                        myMap['__validate__'] = indent + "if self."+ propertyName +" is None:\n"
                         myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         myMap['__validate__'] += indent + "elif not("+" or".join(validateClause)+"):\n"
@@ -815,7 +816,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         myMap['__clone__'] = indent + "obj." + propertyName + " = " + className + ".cloneObject(clone." + propertyName + ")\n"
                         myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                         myMap['__map__'] += indent*2 + "obj." + propertyName + " = " + className + ".fromMap(map['" + propertyName + "'])\n"
-                        myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
+                        myMap['__validate__'] = indent + "if self."+ propertyName +" is None:\n"
                         myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
                         myMap['__validate__'] += indent + "elif not isinstance(self.{0}, {1}):\n".format(propertyName, className)
@@ -858,7 +859,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                             myMap['__default__'] = propertyName + " = None"
                             myMap['__clone__'] = indent + "obj." + propertyName + " = clone." + propertyName + "\n"
                             myMap['__map__'] = indent + "obj." + propertyName + " = map['" + propertyName + "']\n"
-                            myMap['__validate__'] = indent + "if not self."+ propertyName +" or self."+ propertyName +" == None :\n"
+                            myMap['__validate__'] = indent + "if self."+ propertyName +" is None :\n"
                             myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                             myMap['__validate__'] += indent*2 + "error = error + 1\n"
                             myMap['__validate__'] += indent + "elif not isinstance(self.{0}, dict):\n".format(propertyName)
@@ -1067,7 +1068,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     '''
                     for attribute_key in superClassMap['attributes']:
                         if attribute_key in requiredArray:
-                            classDefinition += baseindent*2 + "if self." + attribute_key + " == None:\n"
+                            classDefinition += baseindent*2 + "if self." + attribute_key + " is None:\n"
                             classDefinition += baseindent*3 + "logger.error(\""+className+" - {0}."+attribute_key+" is required\".format(path))\n"
                             classDefinition += baseindent*3 + "error = error + 1\n"
                             
@@ -1150,7 +1151,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 myMap['__map__'] = indent + "if  '" + propertyName + "' in map:\n"
                 myMap['__map__'] += indent*2 + "obj." + propertyName + " = map['" + propertyName + "']\n"
                 myMap['__validate__'] = indent + "# "+ propertyName +" is mandatory\n"
-                myMap['__validate__'] += indent + "if self."+ propertyName +" == None :\n"
+                myMap['__validate__'] += indent + "if self."+ propertyName +" is None :\n"
                 myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" is required\".format(path))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
@@ -1181,7 +1182,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if not myMap.has_key('__validate__'):
                     myMap['__validate__'] = ""
                 if skeleton['format'] == "email":
-                    myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not re.match('[\\w.-]+@[\\w.-]+.\\w+', self." + propertyName + "):\n"
+                    myMap['__validate__'] += indent + "if not self." + propertyName + " is None and not re.match('[\\w.-]+@[\\w.-]+.\\w+', self." + propertyName + "):\n"
                     myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" '{1}' is not a valid email address\".format(path, self."+propertyName+"))\n"
                     myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON)\n"
                     myMap['__validate__'] += indent*2 + "error = error + 1\n"
@@ -1192,7 +1193,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                      So "2014-10-16T13:47:17.000+01:00" would be a valid datetime. 
                      Reference: http://www.w3.org/TR/NOTE-datetime
                     '''
-                    myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None:\n"
+                    myMap['__validate__'] += indent + "if not self." + propertyName + " is None:\n"
                     myMap['__validate__'] += indent*2 + "try:\n"
                     myMap['__validate__'] += indent*3 + "iso8601.parse_date(self."+propertyName+")\n"
                     myMap['__validate__'] += indent*2 + "except iso8601.iso8601.ParseError, e:\n"
@@ -1217,7 +1218,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     enumArray = "'" + "','".join(skeleton['enum']) + "'"
                 else:
                     enumArray = ",".join(skeleton['enum'])
-                myMap['__validate__'] += indent + "if self." + propertyName + " and not self." + propertyName + " == None and not self." + propertyName + " in [" + enumArray + "]:\n"
+                myMap['__validate__'] += indent + "if not self." + propertyName + " is None and not self." + propertyName + " in [" + enumArray + "]:\n"
                 myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}."+propertyName+" value is restricted to the fixed set of values " + enumArray + " ('{1}' given)\".format(path, self."+propertyName+"))\n"
                 myMap['__validate__'] += indent*2 + "error = error + 1\n"
                 
@@ -1284,12 +1285,18 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 
             elif dataType == 'number':
                 '''
-                 A number is initialised to nought by default
+                 A number could be initialised to nought by default but only if the 
+                 field is mandatory
+                 
                 '''
                 myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"
                 myMap['__clone__'] = indent + "if clone." + propertyName + ":\n"
                 myMap['__clone__'] += indent*2 + "obj." + propertyName + " = clone." + propertyName + "\n"
-                myMap['__default__'] = propertyName + " = 0"
+                if required:
+                    myMap['__default__'] = propertyName + " = 0"
+                else:
+                    myMap['__default__'] = propertyName + " = None"
+
                 '''
                  Constraints specific to numbers:
                   minimum, 
@@ -1310,7 +1317,10 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 if (len(constraint)>0):
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
-                    myMap['__validate__'] += indent + "if {0}:\n".format(" or ".join(constraint))
+                    if required:
+                        myMap['__validate__'] += indent + "if {0}:\n".format(" or ".join(constraint))
+                    else:
+                        myMap['__validate__'] += indent + "if self.{0} is not None and ({1}):\n".format(propertyName, " or ".join(constraint))
                     myMap['__validate__'] += indent*2 + "logger.error(\""+parentName+" - {0}.{1}: {2} {3}\".format(path, self.{1}))\n".format("{0}", propertyName, "{1}", " and ".join(message))
                     #myMap['__validate__'] += indent*2 + "logger.error(self.to_JSON())\n"
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
@@ -1385,6 +1395,29 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     # extends the classes definition with the one from this map
                 
                     '''
+                    This constraint is not specific to array but to enum values (for any element of the array)
+                    '''
+                    if 'enum' in items:
+                        '''
+                         The enum keyword is used to restrict a value to a fixed set of values. 
+                         It must be an array with at least one element, where each element is unique
+                        '''
+                        if not myMap.has_key('__validate__'):
+                            myMap['__validate__'] = ""                
+                        enumArray = None
+                        if itemType == 'basestring':
+                            enumArray = "'" + "','".join(items['enum']) + "'"
+                        else:
+                            enumArray = ",".join(items['enum'])
+                            # check that each element is a valid enum type
+                        myMap['__validate__'] += indent + "if not self." + propertyName + " is None:\n"
+                        myMap['__validate__'] += indent*2 + "validValues = [" + enumArray + "]\n"
+                        myMap['__validate__'] += indent*2 + "for item in self." + propertyName + ":\n"
+                        myMap['__validate__'] += indent*3 + "if item not in validValues:\n"
+                        myMap['__validate__'] += indent*4 + "logger.error(\""+parentName+" - {0}."+propertyName+" value is restricted to the fixed set of values " + enumArray + " ('{1}' given)\".format(path, item))\n"
+                        myMap['__validate__'] += indent*4 + "error = error + 1\n"
+                    
+                    '''
                      There are some constraints specific to arrays:
                        type                     
                        minItems
@@ -1396,7 +1429,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     '''
                     The empty array is always valid but the items should be of the specified type
                     '''
-                    myMap['__validate__'] += indent + "if not self.{0} == None and len(self.{0}) > 0 and not all(isinstance(n, {1}) for n in self.{0}):\n".format(propertyName, itemType)
+                    myMap['__validate__'] += indent + "if not self.{0} is None and len(self.{0}) > 0 and not all(isinstance(n, {1}) for n in self.{0}):\n".format(propertyName, itemType)
                     myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have elements of type '{2}'\".format(path))\n".format(parentName, propertyName, itemType, "{0}")
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
                         
