@@ -27,12 +27,12 @@ import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 import datetime
-import cttv.model.core as cttv
-import cttv.model.bioentity as bioentity
-import cttv.model.evidence.core as evidence_core
-import cttv.model.evidence.genetics as evidence_genetics
-import cttv.model.evidence.association_score as evidence_score
-import cttv.model.evidence.phenotype as evidence_phenotype
+import opentargets.model.core as opentargets
+import opentargets.model.bioentity as bioentity
+import opentargets.model.evidence.core as evidence_core
+import opentargets.model.evidence.genetics as evidence_genetics
+import opentargets.model.evidence.association_score as evidence_score
+import opentargets.model.evidence.phenotype as evidence_phenotype
 
 __author__ = "Gautier Koscielny"
 __copyright__ = "Copyright 2014-2015, The Centre for Therapeutic Target Validation (CTTV)"
@@ -58,44 +58,44 @@ def my_teardown_function():
  
 @with_setup(my_setup_function, my_teardown_function)
 def test_base_exists():
-    obj = cttv.Base()
+    obj = opentargets.Base()
     assert not obj == None
     
 @with_setup(my_setup_function, my_teardown_function)
 def test_genetics_exists():
-    obj = cttv.Genetics()
+    obj = opentargets.Genetics()
     assert not obj == None
     
 @with_setup(my_setup_function, my_teardown_function)
 def test_animal_models_exists():
-    obj = cttv.Animal_Models()
+    obj = opentargets.Animal_Models()
     assert not obj == None
 
 @with_setup(my_setup_function, my_teardown_function)
 def test_expression_exists():
-    obj = cttv.Expression()
+    obj = opentargets.Expression()
     assert not obj == None
     
 @with_setup(my_setup_function, my_teardown_function)
 def test_drug_exists():
-    obj = cttv.Drug()
+    obj = opentargets.Drug()
     assert not obj == None
 
 @with_setup(my_setup_function, my_teardown_function)
 def test_literature_curated_exists():
-    obj = cttv.Literature_Curated()
+    obj = opentargets.Literature_Curated()
     assert not obj == None
 
 @with_setup(my_setup_function, my_teardown_function)
 def test_literature_mining_exists():
-    obj = cttv.Literature_Mining()
+    obj = opentargets.Literature_Mining()
     assert not obj == None
 
 @with_setup(my_setup_function, my_teardown_function)
 def test_base_create_and_clone():
-    obj = cttv.Base()
+    obj = opentargets.Base()
     obj.access_level = "public"
-    obj.sourceID = "cttv"
+    obj.sourceID = "opentargets"
     obj.validated_against_schema_version = "1.2.3"
     # create a target
     obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/cttv.activity/predicted_damaging", target_type="http://identifiers.org/cttv.target/gene_evidence")
@@ -105,9 +105,9 @@ def test_base_create_and_clone():
     
 @with_setup(my_setup_function, my_teardown_function)
 def test_genetics_create_and_clone():
-    obj = cttv.Genetics(type="genetic_association")
+    obj = opentargets.Genetics(type="genetic_association")
     obj.access_level = "public"
-    obj.sourceID = "cttv"
+    obj.sourceID = "opentargets"
     obj.validated_against_schema_version = "1.2.3"
     obj.unique_association_fields = { "target": "http://identifiers.org/ensembl/ENSG00000213724", "object": "http://www.ebi.ac.uk/efo/EFO_0003767", "variant": "http://identifiers.org/dbsnp/rs11010067", "study_name": "cttv009_gwas_catalog", "pvalue": "2.000000039082963e-25", "pubmed_refs": "http://europepmc.org/abstract/MED/23128233" }
 
@@ -115,7 +115,7 @@ def test_genetics_create_and_clone():
     obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/cttv.activity/predicted_damaging", target_type="http://identifiers.org/cttv.target/gene_evidence")
     obj.disease = bioentity.Disease(id=["http://www.ebi.ac.uk/efo/EFO_0003767"]) 
     obj.variant = bioentity.Variant(id=["http://identifiers.org/dbsnp/rs11010067"], type="snp single") 
-    obj.evidence = cttv.GeneticsEvidence(
+    obj.evidence = opentargets.GeneticsEvidence(
         variant2disease = evidence_genetics.Variant2Disease(  
             evidence_codes = ["http://purl.obolibrary.org/obo/ECO_0000205"], 
             unique_experiment_reference = "http://europepmc.org/abstract/MED/23128233", 
@@ -143,7 +143,7 @@ def test_genetics_create_and_clone():
 def test_animal_models_create_and_clone():
 
     now = datetime.datetime.now()
-    obj = cttv.Animal_Models()
+    obj = opentargets.Animal_Models()
     obj.validated_against_schema_version = '1.2.3'
     obj.access_level = 'public'
     obj.type = 'animal_model'
@@ -161,7 +161,7 @@ def test_animal_models_create_and_clone():
     obj.unique_association_fields = {}
     obj.unique_association_fields['predictionModel'] = 'mgi_predicted'
 
-    obj.evidence = cttv.Animal_ModelsEvidence()
+    obj.evidence = opentargets.Animal_ModelsEvidence()
     #obj.evidence.evidence_codes.append("http://identifiers.org/eco/ECO:0000057")
     obj.evidence.orthologs = evidence_phenotype.Orthologs(
         evidence_codes = ["http://identifiers.org/eco/ECO:0000265"],
@@ -246,9 +246,9 @@ def test_animal_models_create_and_clone():
 
 @with_setup(my_setup_function, my_teardown_function)
 def test_expression_create_and_clone():
-    obj = cttv.Expression()
+    obj = opentargets.Expression()
     obj.access_level = "public"
-    obj.sourceID = "cttv"
+    obj.sourceID = "opentargets"
     obj.validated_against_schema_version = "1.2.3"
     # create a target
     obj.target = bioentity.Target(
@@ -262,12 +262,12 @@ def test_expression_create_and_clone():
     
 @with_setup(my_setup_function, my_teardown_function)
 def test_drug_create_and_clone():
-    obj = cttv.Drug()
+    obj = opentargets.Drug()
     assert not obj == None
 
 @with_setup(my_setup_function, my_teardown_function)
 def test_literature_curated_create_and_clone():
-    obj = cttv.Literature_Curated()
+    obj = opentargets.Literature_Curated()
     assert not obj == None
 
 @with_setup(my_setup_function, my_teardown_function)
@@ -276,7 +276,7 @@ def test_literature_mining_create_and_clone():
     target = "http://identifiers.org/ensembl/ENSG00000213724"
     disease = "http://www.ebi.ac.uk/efo/EFO_0003767"
     score = 0.5
-    obj = cttv.Literature_Mining(type='literature')
+    obj = opentargets.Literature_Mining(type='literature')
     obj.access_level = "public"
     obj.sourceID = "disgenet"
     obj.validated_against_schema_version = "1.2.3"
