@@ -34,48 +34,44 @@ import ConfigParser
 import io
 
 __author__ = "Gautier Koscielny"
-__copyright__ = "Copyright 2014-2015, The Centre for Therapeutic Target Validation (CTTV)"
+__copyright__ = "Copyright 2014-2016, Open Targets"
 __credits__ = ["Gautier Koscielny", "Samiul Hasan"]
 __license__ = "Apache 2.0"
-__version__ = "1.2.1"
+__version__ = "1.2.3"
 __maintainer__ = "Gautier Koscielny"
 __email__ = "gautierk@targetvalidation.org"
 __status__ = "Production"
 
-basepackagepath = "cttv/model"
+basepackagepath = "opentargets/model"
 packageClassNames = {}
 packageClassDefinitions = {}
 packagePythonMapping = {}
 baseindent = "  "
 
-requirements = '''
-nose>=1.3.4
+requirements = '''nose>=1.3.4
 tox>=1.7.0
 wheel>=0.22.0
 iso8601>=0.1.10
 '''
 
-manifest = '''
-recursive-include cttv *.py
+manifest = '''recursive-include opentargets *.py
 include README.rst LICENSE tox.ini setup.py *requirements.txt
 '''
 
-tox = '''
-[tox]
+tox = '''[tox]
 envlist = py27
 
 [testenv]
 deps=-r{toxinidir}/requirements.txt
-changedir={toxinidir}/cttv/model/tests
+changedir={toxinidir}/opentargets/model/tests
 commands=nosetests
 #deps= -rrequirements.txt
-#commands=py.test --verbose cttv/model/test_cttv_model.py
+#commands=py.test --verbose opentargets/model/test_data_model.py
 setenv =
     LC_ALL=C
 '''
 
-setup = '''
-import os
+setup = '''import os
 
 try:
     from setuptools import setup
@@ -85,16 +81,16 @@ except ImportError:
 long_description = open(os.path.join(os.path.dirname(__file__), "README.rst")).read()
 
 setup(
-    name="cttvmodel",
-    version="1.2.1",
+    name="data_model",
+    version="1.2.3",
     description=long_description.split("\\n")[0],
     long_description=long_description,
     author="Gautier Koscielny",
     author_email="gautierk@targetvalidation.org",
-    url="https://github.com/CTTV/json_schema",
+    url="https://github.com/CTTV/data_model",
     #packages=find_packages('.'),
     #package_dir = {'': '.'},
-    #namespace_packages = ["cttv", "cttv.model"],
+    #namespace_packages = ["opentargets", "opentargets.model"],
     packages=[ LIST_PACKAGES ],
     license="Apache2",
     classifiers=[
@@ -106,14 +102,13 @@ setup(
 
 '''
 
-readme = '''
-Simple module to validate, compare and generate CTTV evidence strings
+readme = '''Simple module to validate, compare and generate Open Targets evidence strings
 
 Installation using python's pip installer:
 
-- (As root) pip install git+https://github.com/CTTV/cttvmodel.git
-- (Install to a custom folder called 'cttvmodel') pip install -t cttvmodel git+https://github.com/CTTV/cttvmodel.git
-- (Install a specific version of the code in a specific folder, here 1.2.1) pip install -t cttvmodel-1.2.1 git+https://github.com/CTTV/cttvmodel.git@1.2.1
+- (As root) pip install git+https://github.com/CTTV/data_model.git
+- (Install to a custom folder called 'data_model') pip install -t data_model git+https://github.com/CTTV/data_model.git
+- (Install a specific version of the code in a specific folder, here 1.2.3) pip install -t data_model-1.2.3 git+https://github.com/CTTV/data_model.git@1.2.3
 
 '''
 
@@ -307,7 +302,7 @@ license = '''
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright (c) 2014 - 2015 CTTV
+   Copyright (c) 2014 - 2016 Open Targets
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -323,11 +318,10 @@ license = '''
 '''
 
 licence_header = '''
-Copyright 2014-2015 EMBL - European Bioinformatics Institute, Wellcome 
-Trust Sanger Institute and GlaxoSmithKline
+Copyright 2014-2016 EMBL - European Bioinformatics Institute, Wellcome 
+Trust Sanger Institute, GlaxoSmithKline and Biogen
 
-This software was developed as part of the Centre for Therapeutic 
-Target Validation (CTTV)  project. For more information please see:
+This software was developed as part of Open Targets. For more information please see:
 
 	http://targetvalidation.org
 
@@ -346,10 +340,10 @@ limitations under the License.
 
 authorship = '''
 __author__ = "Gautier Koscielny"
-__copyright__ = "Copyright 2014-2015, The Centre for Therapeutic Target Validation (CTTV)"
+__copyright__ = "Copyright 2014-2016, Open Targets"
 __credits__ = ["Gautier Koscielny", "Samiul Hasan"]
 __license__ = "Apache 2.0"
-__version__ = "1.2.1"
+__version__ = "1.2.3"
 __maintainer__ = "Gautier Koscielny"
 __email__ = "gautierk@targetvalidation.org"
 __status__ = "Production"
@@ -772,7 +766,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                         el = "el"
                     
                     myMap['__map__'] += indent*2 + "else:\n"
-                    myMap['__map__'] += indent*3 + "raise cttv.model.core.JSONException(\"" + propertyName + " can't be cast to any class\")\n"
+                    myMap['__map__'] += indent*3 + "raise opentargets.model.core.JSONException(\"" + propertyName + " can't be cast to any class\")\n"
                     if required:
                         #myMap['__init__'] += indent + "if " + propertyName + " is None:\n" + indent*2 + "self." + propertyName + " = {}\n" + indent + "else:\n" + indent*2 + "self." + propertyName + " = "+ propertyName + "\n"
                         myMap['__init__'] += indent + "self." + propertyName + " = " + propertyName + "\n"                        
@@ -898,7 +892,7 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                  Generate the python class specification with:
                   0. declaration of the class with the superclass
                   1. collect the default initialisation for fields (init all the attributes by default)
-                     if the class inherits from a cttv class, we need to pass all the attributes and callable
+                     if the class inherits from an open targets class, we need to pass all the attributes and callable
                      the constructor for the fields that belongs to the superclass
                   2. a constructor will all the fields as arguments with default values
                   3. a deep-copy constructor (clone)
@@ -1427,22 +1421,29 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                     if not myMap.has_key('__validate__'):
                         myMap['__validate__'] = ""
                     '''
-                    The empty array is always valid but the items should be of the specified type
+                    An empty array is always valid but the items should be of the specified type
                     '''
                     myMap['__validate__'] += indent + "if not self.{0} is None and len(self.{0}) > 0 and not all(isinstance(n, {1}) for n in self.{0}):\n".format(propertyName, itemType)
                     myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have elements of type '{2}'\".format(path))\n".format(parentName, propertyName, itemType, "{0}")
                     myMap['__validate__'] += indent*2 + "error = error+1\n"
-                        
-                    if ('minItems' in items):
-                        
-                        myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) < {1}:\n".format(propertyName, items['minItems'])
-                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have at least {2} elements\".format(path))\n".format(parentName, propertyName, items['minItems'], "{0}")
+
+                    '''
+                    If there is a minimum set of items to be checked then add a condition to test the number of items
+                    '''
+                    if ('minItems' in skeleton):
+                        print "MINITEMS FOR ATTRIBUTE %s"%propertyName
+                        constraint = skeleton['minItems']
+                        myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) < {1}:\n".format(propertyName, constraint)
+                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have at least {2} elements\".format(path))\n".format(parentName, propertyName, constraint, "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
-                    if ('maxItems' in items):
-                        myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) > {1}:\n".format(propertyName, items['maxItems'])
-                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have at most {2} elements\".format(path))\n".format(parentName, propertyName, items['maxItems'], "{0}")
+
+                    if ('maxItems' in skeleton):
+                        constraint = skeleton['maxItems']
+                        myMap['__validate__'] += indent + "if self.{0} and len(self.{0}) > {1}:\n".format(propertyName, constraint)
+                        myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {3}.{1} array should have at most {2} elements\".format(path))\n".format(parentName, propertyName, constraint, "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
-                    if ('uniqueItems' in items):
+
+                    if ('uniqueItems' in skeleton):
                         myMap['__validate__'] += indent + "if self.{0} and len(set(self.{0})) != len(self.{0}):\n".format(propertyName)
                         myMap['__validate__'] += indent*2 + "logger.error(\"{0} - {2}.{1} array have duplicated elements\".format(path))\n".format(parentName, propertyName, "{0}")
                         myMap['__validate__'] += indent*2 + "error = error + 1\n"
@@ -1541,7 +1542,7 @@ def write_package_files(exportDirectory, dirpath, isAModule=False):
         
     print "export following classes: " + ",".join(packageClassDefinitions[package]['classes'])
     
-    if package == "cttv.model.core":
+    if package == "opentargets.model.core":
         initFile.write("\nclass JSONException(Exception):\n")
         initFile.write(baseindent + "pass\n\n")
         
@@ -1576,8 +1577,8 @@ class DataModelGenerator(object):
 def main():
 
     parser = optparse.OptionParser()
-    parser.add_option('-d', '--directory', default='../../../../../../build', dest='exportDirectory')
-    parser.add_option('-c', '--config', default='../../../../../../schema/json-1.2.ini', dest='json_schema_ini_file')
+    parser.add_option('-d', '--directory', default='build', dest='exportDirectory')
+    parser.add_option('-c', '--config', default='schema/json-1.2.ini', dest='json_schema_ini_file')
     parser.add_option('-p', '--proxy', dest='proxy')
     #parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/CTTV/json_schema/master/src/base.json', dest='json_schema_uri')
 
@@ -1672,7 +1673,7 @@ def main():
     generator._generate_file(options.exportDirectory, tox, "tox.ini")
     generator._generate_file(options.exportDirectory, requirements, "requirements.txt")
     generator._generate_file(options.exportDirectory, manifest, "MANIFEST.in")
-    shutil.copy2(testDirectory +'/test_cttv_model.py', options.exportDirectory + "/cttv/model/test_cttv_model.py")
+    shutil.copy2(testDirectory +'/test_data_model.py', options.exportDirectory + "/opentargets/model/test_data_model.py")
     print 'The package has been generated in ', options.exportDirectory
     # exit here
     sys.exit()
