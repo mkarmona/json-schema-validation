@@ -1,9 +1,8 @@
 ﻿'''
-Copyright 2014-2015 EMBL - European Bioinformatics Institute, Wellcome
-Trust Sanger Institute and GlaxoSmithKline
+Copyright 2014-2017 EMBL - European Bioinformatics Institute, Wellcome
+Trust Sanger Institute, GlaxoSmithKline and Biogen
 
-This software was developed as part of the Centre for Therapeutic
-Target Validation (CTTV)  project. For more information please see:
+This software was developed as part of Open Targets. For more information please see:
 
         http://targetvalidation.org
 
@@ -34,10 +33,10 @@ import ConfigParser
 import io
 
 __author__ = "Gautier Koscielny"
-__copyright__ = "Copyright 2014-2016, Open Targets"
+__copyright__ = "Copyright 2014-2017, Open Targets"
 __credits__ = ["Gautier Koscielny", "Samiul Hasan"]
 __license__ = "Apache 2.0"
-__version__ = "1.2.3"
+__version__ = "1.2.4"
 __maintainer__ = "Gautier Koscielny"
 __email__ = "gautierk@targetvalidation.org"
 __status__ = "Production"
@@ -82,12 +81,12 @@ long_description = open(os.path.join(os.path.dirname(__file__), "README.rst")).r
 
 setup(
     name="data_model",
-    version="1.2.3",
+    version="1.2.4",
     description=long_description.split("\\n")[0],
     long_description=long_description,
     author="Gautier Koscielny",
     author_email="gautierk@targetvalidation.org",
-    url="https://github.com/CTTV/data_model",
+    url="https://github.com/opentargets/data_model",
     #packages=find_packages('.'),
     #package_dir = {'': '.'},
     #namespace_packages = ["opentargets", "opentargets.model"],
@@ -106,9 +105,9 @@ readme = '''Simple module to validate, compare and generate Open Targets evidenc
 
 Installation using python's pip installer:
 
-- (As root) pip install git+https://github.com/CTTV/data_model.git
-- (Install to a custom folder called 'data_model') pip install -t data_model git+https://github.com/CTTV/data_model.git
-- (Install a specific version of the code in a specific folder, here 1.2.3) pip install -t data_model-1.2.3 git+https://github.com/CTTV/data_model.git@1.2.3
+- (As root) pip install git+https://github.com/opentargets/data_model.git
+- (Install to a custom folder called 'data_model') pip install -t data_model git+https://github.com/opentargets/data_model.git
+- (Install a specific version of the code in a specific folder, here 1.2.4) pip install -t data_model-1.2.4 git+https://github.com/opentargets/data_model.git@1.2.4
 
 '''
 
@@ -302,7 +301,7 @@ license = '''
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright (c) 2014 - 2016 Open Targets
+   Copyright (c) 2014 - 2017 Open Targets
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -318,7 +317,7 @@ license = '''
 '''
 
 licence_header = '''
-Copyright 2014-2016 EMBL - European Bioinformatics Institute, Wellcome 
+Copyright 2014-2017 EMBL - European Bioinformatics Institute, Wellcome
 Trust Sanger Institute, GlaxoSmithKline and Biogen
 
 This software was developed as part of Open Targets. For more information please see:
@@ -340,10 +339,10 @@ limitations under the License.
 
 authorship = '''
 __author__ = "Gautier Koscielny"
-__copyright__ = "Copyright 2014-2016, Open Targets"
+__copyright__ = "Copyright 2014-2017, Open Targets"
 __credits__ = ["Gautier Koscielny", "Samiul Hasan"]
 __license__ = "Apache 2.0"
-__version__ = "1.2.3"
+__version__ = "1.2.4"
 __maintainer__ = "Gautier Koscielny"
 __email__ = "gautierk@targetvalidation.org"
 __status__ = "Production"
@@ -371,13 +370,13 @@ def get_class_properties_from_ref(ref, textindent, innerClass = None, uri = None
     '''
     A reference to a global class defined inside or outside the same package
     '''
-    #https://raw.githubusercontent.com/CTTV/json_schema/master/src/evidence/base.json#base_evidence/properties/association_score
-    uri_match = re.match("^https://raw\.githubusercontent\.com/CTTV/json_schema/master/src/(.+)\.json#*(.*)$", ref)
+    #https://raw.githubusercontent.com/opentargets/json_schema/master/src/evidence/base.json#base_evidence/properties/association_score
+    uri_match = re.match("^https://raw\.githubusercontent\.com/opentargets/json_schema/master/src/(.+)\.json#*(.*)$", ref)
     
     '''
     The URI of the corresponding package
     '''
-    json_match = re.match("^(https://raw\.githubusercontent\.com/CTTV/json_schema/master/src/.+\.json).*$", ref)
+    json_match = re.match("^(https://raw\.githubusercontent\.com/opentargets/json_schema/master/src/.+\.json).*$", ref)
     
     '''
      if we found a a URI reference
@@ -464,7 +463,7 @@ def get_class_properties_from_ref(ref, textindent, innerClass = None, uri = None
 #        classProperties['class'] = raw[-1].title()
 #        print("LOCAL MATCH " + fullclasspath)
     else:
-        print(ref + "didn't match pattern :(")
+        print(ref + " didn't match pattern :(")
         sys.exit(1)
 
     return classProperties
@@ -681,11 +680,23 @@ def generate_classes(skeleton, propertyName=None, parentName=None, package=None,
                 '''
                  if there are definitions, treat them as inner classes. 
                  However, we will expose them as the same level as the class declaring it
+                 If the ID is a URL
                 '''
                 if 'definitions' in skeleton:
                     print textindent + "Parse extra definitions at depth {0}".format(depth)
                     for definition_key in skeleton['definitions']:
-                        definitionMap = generate_classes(skeleton['definitions'][definition_key], parentName=definition_key, package=package, depth=depth, uri=uri + skeleton['id'] + "/definitions/" + definition_key, proxy=proxy)
+                        prefix = uri
+                        if uri in skeleton['id']:
+                            prefix = skeleton['id']
+                        else:
+                            prefix =uri + skeleton['id']
+
+                        definitionMap = generate_classes(
+                            skeleton['definitions'][definition_key],
+                            parentName=definition_key,
+                            package=package,
+                            depth=depth,
+                            uri=prefix + "/definitions/" + definition_key, proxy=proxy)
                 
             '''
              If the object contains properties, parse each of the properties and 
@@ -1580,7 +1591,7 @@ def main():
     parser.add_option('-d', '--directory', default='build', dest='exportDirectory')
     parser.add_option('-c', '--config', default='schema/json-1.2.ini', dest='json_schema_ini_file')
     parser.add_option('-p', '--proxy', dest='proxy')
-    #parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/CTTV/json_schema/master/src/base.json', dest='json_schema_uri')
+    #parser.add_option('-u', '--uri', default='https://raw.githubusercontent.com/opentargets/json_schema/master/src/base.json', dest='json_schema_uri')
 
     options, args = parser.parse_args()
 

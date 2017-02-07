@@ -1,5 +1,5 @@
 '''
-Copyright 2014-2015 EMBL - European Bioinformatics Institute, Wellcome
+Copyright 2014-2017 EMBL - European Bioinformatics Institute, Wellcome
 Trust Sanger Institute and GlaxoSmithKline
 
 This software was developed as part of the Centre for Therapeutic
@@ -35,10 +35,10 @@ import opentargets.model.evidence.association_score as evidence_score
 import opentargets.model.evidence.phenotype as evidence_phenotype
 
 __author__ = "Gautier Koscielny"
-__copyright__ = "Copyright 2014-2015, The Centre for Therapeutic Target Validation (CTTV)"
+__copyright__ = "Copyright 2014-2017, The Centre for Therapeutic Target Validation (CTTV)"
 __credits__ = ["Gautier Koscielny", "Samiul Hasan", "Michael Maguire"]
 __license__ = "Apache 2.0"
-__version__ = "1.2.3"
+__version__ = "1.2.4"
 __maintainer__ = "Gautier Koscielny"
 __email__ = "gautierk@targetvalidation.org"
 __status__ = "Production"
@@ -96,7 +96,7 @@ def test_base_create_and_clone():
     obj = opentargets.Base()
     obj.access_level = "public"
     obj.sourceID = "opentargets"
-    obj.validated_against_schema_version = "1.2.3"
+    obj.validated_against_schema_version = "1.2.4"
     # create a target
     obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/cttv.activity/predicted_damaging", target_type="http://identifiers.org/cttv.target/gene_evidence")
     obj.disease = bioentity.Disease(id=["http://www.ebi.ac.uk/efo/EFO_0003767"]) 
@@ -108,7 +108,7 @@ def test_genetics_create_and_clone():
     obj = opentargets.Genetics(type="genetic_association")
     obj.access_level = "public"
     obj.sourceID = "opentargets"
-    obj.validated_against_schema_version = "1.2.3"
+    obj.validated_against_schema_version = "1.2.4"
     obj.unique_association_fields = { "target": "http://identifiers.org/ensembl/ENSG00000213724", "object": "http://www.ebi.ac.uk/efo/EFO_0003767", "variant": "http://identifiers.org/dbsnp/rs11010067", "study_name": "cttv009_gwas_catalog", "pvalue": "2.000000039082963e-25", "pubmed_refs": "http://europepmc.org/abstract/MED/23128233" }
 
     # create target, disease and variant
@@ -144,7 +144,7 @@ def test_animal_models_create_and_clone():
 
     now = datetime.datetime.now()
     obj = opentargets.Animal_Models()
-    obj.validated_against_schema_version = '1.2.3'
+    obj.validated_against_schema_version = '1.2.4'
     obj.access_level = 'public'
     obj.type = 'animal_model'
     obj.sourceID = 'phenodigm'
@@ -249,7 +249,7 @@ def test_expression_create_and_clone():
     obj = opentargets.Expression()
     obj.access_level = "public"
     obj.sourceID = "opentargets"
-    obj.validated_against_schema_version = "1.2.3"
+    obj.validated_against_schema_version = "1.2.4"
     # create a target
     obj.target = bioentity.Target(
         id=["http://identifiers.org/ensembl/ENSG00000213724"], 
@@ -279,7 +279,7 @@ def test_literature_mining_create_and_clone():
     obj = opentargets.Literature_Mining(type='literature')
     obj.access_level = "public"
     obj.sourceID = "disgenet"
-    obj.validated_against_schema_version = "1.2.3"
+    obj.validated_against_schema_version = "1.2.4"
     obj.unique_association_fields = {"target": target,
             "publicationIDs": lit_id_,
             "disease_uri": disease}
