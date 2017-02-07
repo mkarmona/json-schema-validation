@@ -5,12 +5,12 @@ import sys
 sys.path.append('../../../../../../build')
 import logging
 logger = logging.getLogger(__name__)
-from cttv.model.core import *
-import cttv.model.bioentity as bioentity
-import cttv.model.evidence.core as evidence
-import cttv.model.evidence.genetics as evidence_genetics
-import cttv.model.evidence.association_score as evidence_score
-# import cttv.model.evidence.core as evidence_core
+from opentargets.model.core import *
+import opentargets.model.bioentity as bioentity
+import opentargets.model.evidence.core as evidence
+import opentargets.model.evidence.genetics as evidence_genetics
+import opentargets.model.evidence.association_score as evidence_score
+# import opentargets.model.evidence.core as evidence_core
 
 def setup_module(module):
     print ("") # this is to get a newline after the dots
@@ -67,7 +67,7 @@ def test_base_create_and_clone():
     obj.sourceID = "CTTV"
     obj.validated_against_schema_version = "1.2"
     # create a target
-    obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/cttv.activity/predicted_damaging", target_type="http://identifiers.org/cttv.target/gene")
+    obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/opentargets.activity/predicted_damaging", target_type="http://identifiers.org/opentargets.target/gene")
     obj.disease = bioentity.Disease(id=["http://www.ebi.ac.uk/efo/EFO_0003767"]) 
     errors = obj.validate(logger)
     assert not obj == None and errors == 0
@@ -81,7 +81,7 @@ def test_genetics_create_and_clone():
     obj.unique_association_fields = { "target": "http://identifiers.org/ensembl/ENSG00000213724", "object": "http://www.ebi.ac.uk/efo/EFO_0003767", "variant": "http://identifiers.org/dbsnp/rs11010067", "study_name": "cttv009_gwas_catalog", "pvalue": "2.000000039082963e-25", "pubmed_refs": "http://europepmc.org/abstract/MED/23128233" }
 
     # create target, disease and variant
-    obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/cttv.activity/predicted_damaging", target_type="http://identifiers.org/cttv.target/gene")
+    obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/opentargets.activity/predicted_damaging", target_type="http://identifiers.org/opentargets.target/gene")
     obj.disease = bioentity.Disease(id=["http://www.ebi.ac.uk/efo/EFO_0003767"]) 
     obj.variant = bioentity.Variant(id=["http://identifiers.org/dbsnp/rs11010067"], type="snp single") 
     obj.evidence = GeneticsEvidence(
@@ -119,7 +119,7 @@ def test_expression_create_and_clone():
     obj.sourceID = "CTTV"
     obj.validated_against_schema_version = "1.2"
     # create a target
-    obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/cttv.activity/predicted_damaging", target_type="http://identifiers.org/cttv.target/gene")
+    obj.target = bioentity.Target(id=["http://identifiers.org/ensembl/ENSG00000213724"], activity="http://identifiers.org/opentargets.activity/predicted_damaging", target_type="http://identifiers.org/opentargets.target/gene")
     obj.disease = bioentity.Disease(id=["http://www.ebi.ac.uk/efo/EFO_0003767"]) 
     
     assert not obj == None
